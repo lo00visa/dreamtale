@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html>
+<head><title>初始化DreamArchive</title></head>
+<body>
+<h1>正在初始化...</h1>
+<script src="dreams_data.js"></script>
+<script>
+// 创建lovisa账号
+const users = {
+  'lovisa': {
+    password: '20030521',
+    createdAt: '2026-04-24T00:00:00.000Z',
+    settings: {}
+  }
+};
+localStorage.setItem('dreamarchive_users', JSON.stringify(users));
+localStorage.setItem('dreamarchive_last_user', 'lovisa');
+localStorage.setItem('dreamarchive_lovisa_dreams', JSON.stringify(DREAM_ARCHIVE_DATA));
+
+document.body.innerHTML = '<h1>✅ 初始化完成！</h1><p>账号: lovisa</p><p>密码: 20030521</p><p>梦境数据: ' + DREAM_ARCHIVE_DATA.length + ' 条</p><p><a href="index.html">点击打开DreamArchive</a></p>';
+</script>
+</body>
+</html>

@@ -1,0 +1,1671 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DreamArchive · 梦境档案馆</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+<style>
+/* ========== 主题变量 ========== */
+:root {
+  --pink: #FF6B9D;
+  --purple: #A855F7;
+  --blue: #5B9CFF;
+  --cyan: #06B6D4;
+  --gold: #F59E0B;
+  --green: #10B981;
+  --bg: #0D0D1A;
+  --bg-card: #151528;
+  --bg-card-hover: #1E1E38;
+  --text: #E8E6F0;
+  --text-light: #8B8AA0;
+  --border: #2D2B45;
+  --gradient: linear-gradient(135deg, #FF6B9D 0%, #A855F7 50%, #06B6D4 100%);
+}
+[data-theme="light"] {
+  --bg: #F8F5FC;
+  --bg-card: #FFFFFF;
+  --bg-card-hover: #F3F0FA;
+  --text: #1A1625;
+  --text-light: #6B6880;
+  --border: #E5E0F0;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'PingFang SC', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; padding-bottom: 100px; transition: background 0.3s, color 0.3s; }
+
+/* ========== 头部 ========== */
+.header { text-align: center; padding: 50px 20px 30px; position: relative; }
+.header::before { content: ''; position: absolute; top: 0; left: 50%; transform: translateX(-50%); width: 300px; height: 300px; background: radial-gradient(circle, rgba(168,85,247,0.15) 0%, transparent 70%); pointer-events: none; }
+.header h1 { font-size: 32px; font-weight: 300; letter-spacing: 8px; background: var(--gradient); -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin-bottom: 10px; }
+.header p { color: var(--text-light); font-size: 14px; letter-spacing: 2px; }
+
+/* ========== 设置栏 ========== */
+.settings-bar { position: fixed; top: 15px; right: 15px; z-index: 100; display: flex; gap: 8px; }
+.settings-btn { background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 8px 14px; font-size: 14px; cursor: pointer; color: var(--text); display: flex; align-items: center; gap: 6px; }
+.settings-btn:hover { background: var(--bg-card-hover); }
+
+/* ========== 搜索栏 ========== */
+.search-section { padding: 0 20px; margin-bottom: 20px; }
+.search-bar { display: flex; gap: 10px; background: var(--bg-card); border: 1px solid var(--border); border-radius: 16px; padding: 6px; }
+.search-bar input { flex: 1; background: transparent; border: none; padding: 14px 16px; font-size: 15px; color: var(--text); outline: none; }
+.search-bar input::placeholder { color: var(--text-light); }
+.search-btn { background: var(--gradient); border: none; color: white; padding: 12px 20px; border-radius: 12px; cursor: pointer; font-size: 14px; }
+
+/* ========== 导航 ========== */
+.nav { display: flex; gap: 8px; padding: 0 20px; margin-bottom: 25px; overflow-x: auto; justify-content: flex-start; }
+.nav::-webkit-scrollbar { display: none; }
+.nav-btn { background: var(--bg-card); border: 1px solid var(--border); padding: 12px 18px; border-radius: 14px; cursor: pointer; font-size: 14px; color: var(--text); white-space: nowrap; transition: all 0.2s; }
+.nav-btn.active { background: var(--gradient); color: white; border-color: transparent; }
+.nav-btn:hover:not(.active) { background: var(--bg-card-hover); }
+
+/* ========== 页面 ========== */
+.page { display: none; padding: 0 20px; }
+.page.active { display: block; animation: fadeIn 0.3s ease; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+/* ========== 统计卡片 ========== */
+.stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 25px; }
+.stat-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 16px; padding: 20px 15px; text-align: center; }
+.stat-card .icon { font-size: 24px; margin-bottom: 8px; }
+.stat-card .num { font-size: 28px; font-weight: 700; background: var(--gradient); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+.stat-card .label { font-size: 12px; color: var(--text-light); margin-top: 4px; }
+
+/* ========== 筛选标签 ========== */
+.filter-bar { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 20px; }
+.filter-btn { background: var(--bg-card); border: 1px solid var(--border); padding: 8px 16px; border-radius: 20px; font-size: 13px; cursor: pointer; color: var(--text-light); transition: all 0.2s; }
+.filter-btn.active { background: var(--gradient); color: white; border-color: transparent; }
+
+/* ========== 梦境卡片 ========== */
+.dream-list { display: flex; flex-direction: column; gap: 15px; }
+.dream-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 20px; padding: 20px; cursor: pointer; transition: all 0.2s; }
+.dream-card:hover { transform: translateY(-3px); border-color: var(--purple); box-shadow: 0 10px 40px rgba(168,85,247,0.15); }
+.dream-date { font-size: 12px; color: var(--text-light); margin-bottom: 8px; display: flex; align-items: center; gap: 8px; }
+.dream-title { font-size: 16px; font-weight: 600; margin-bottom: 10px; line-height: 1.4; }
+.dream-content { font-size: 14px; color: var(--text-light); line-height: 1.6; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.dream-meta { display: flex; gap: 12px; margin-top: 12px; flex-wrap: wrap; }
+.dream-tag { background: rgba(168,85,247,0.15); padding: 5px 12px; border-radius: 10px; font-size: 12px; color: var(--purple); }
+.dream-emotion { font-size: 12px; padding: 5px 12px; border-radius: 10px; background: rgba(6,182,212,0.15); color: var(--cyan); }
+
+/* ========== 弹窗 ========== */
+.modal { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.8); z-index: 1000; justify-content: center; align-items: center; padding: 20px; backdrop-filter: blur(10px); }
+.modal.show { display: flex; }
+.modal-content { background: var(--bg-card); border: 1px solid var(--border); border-radius: 24px; max-width: 700px; width: 100%; max-height: 85vh; overflow-y: auto; padding: 30px; }
+.modal-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 20px; }
+.modal-close { background: none; border: none; font-size: 28px; cursor: pointer; color: var(--text-light); line-height: 1; }
+.modal-title { font-size: 20px; font-weight: 600; }
+.modal-date { font-size: 13px; color: var(--text-light); margin-top: 5px; }
+
+/* ========== 解读风格选择 ========== */
+.analysis-selector { display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; }
+.analysis-style-btn { flex: 1; min-width: 140px; background: var(--bg); border: 2px solid var(--border); padding: 15px 12px; border-radius: 14px; cursor: pointer; text-align: center; transition: all 0.2s; }
+.analysis-style-btn:hover { border-color: var(--purple); }
+.analysis-style-btn.active { border-color: var(--purple); background: rgba(168,85,247,0.1); }
+.analysis-style-btn .style-icon { font-size: 24px; margin-bottom: 8px; }
+.analysis-style-btn .style-name { font-size: 14px; font-weight: 600; }
+.analysis-style-btn .style-desc { font-size: 11px; color: var(--text-light); margin-top: 4px; }
+
+/* ========== 解读内容 ========== */
+.analysis-content { font-size: 14px; line-height: 1.9; color: var(--text); }
+.analysis-content h3 { font-size: 16px; margin: 20px 0 10px; color: var(--purple); }
+.analysis-content p { margin-bottom: 12px; }
+.analysis-content table { width: 100%; border-collapse: collapse; margin: 15px 0; }
+.analysis-content th, .analysis-content td { padding: 10px 12px; border: 1px solid var(--border); text-align: left; font-size: 13px; }
+.analysis-content th { background: var(--bg); color: var(--purple); }
+
+/* ========== 日历 ========== */
+.calendar-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+.calendar-nav { display: flex; gap: 15px; align-items: center; }
+.calendar-nav-btn { background: var(--bg); border: 1px solid var(--border); border-radius: 10px; padding: 8px 14px; cursor: pointer; color: var(--text); font-size: 14px; }
+.calendar-month { font-size: 18px; font-weight: 600; }
+.calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; text-align: center; }
+.calendar-weekday { font-size: 12px; color: var(--text-light); padding: 10px 0; font-weight: 600; }
+.calendar-day { aspect-ratio: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; border-radius: 12px; background: var(--bg); border: 1px solid var(--border); cursor: pointer; transition: all 0.2s; font-size: 14px; }
+.calendar-day:hover { border-color: var(--purple); transform: scale(1.05); }
+.calendar-day.has-dream { background: var(--gradient); color: white; border-color: transparent; }
+.calendar-day.today { border-color: var(--gold); }
+.calendar-day .day-count { font-size: 10px; margin-top: 2px; opacity: 0.8; }
+
+/* ========== 日历统计 ========== */
+.calendar-stats { display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; margin-top: 25px; }
+.calendar-stat-card { background: var(--bg); border: 1px solid var(--border); border-radius: 16px; padding: 20px; }
+.calendar-stat-card .stat-label { font-size: 12px; color: var(--text-light); margin-bottom: 8px; }
+.calendar-stat-card .stat-value { font-size: 24px; font-weight: 700; color: var(--purple); }
+.calendar-stat-card .stat-sub { font-size: 11px; color: var(--text-light); margin-top: 4px; }
+
+/* ========== 人物页面 ========== */
+.people-section { margin-bottom: 30px; }
+.people-section-title { font-size: 14px; color: var(--text-light); margin-bottom: 15px; display: flex; align-items: center; gap: 8px; }
+.people-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 12px; }
+.person-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 16px; padding: 18px; text-align: center; cursor: pointer; transition: all 0.2s; }
+.person-card:hover { border-color: var(--purple); transform: translateY(-2px); }
+.person-card .emoji { font-size: 36px; margin-bottom: 10px; }
+.person-card .name { font-size: 15px; font-weight: 600; margin-bottom: 5px; }
+.person-card .relation { font-size: 12px; color: var(--text-light); margin-bottom: 8px; }
+.person-card .count { font-size: 20px; font-weight: 700; color: var(--pink); }
+.person-card .count-label { font-size: 11px; color: var(--text-light); }
+
+/* ========== 人物详情 ========== */
+.person-detail { display: none; }
+.person-detail.active { display: block; }
+.person-detail-header { display: flex; align-items: center; gap: 20px; margin-bottom: 25px; padding-bottom: 20px; border-bottom: 1px solid var(--border); }
+.person-detail-header .emoji { font-size: 60px; }
+.person-detail-header .info h2 { font-size: 22px; margin-bottom: 5px; }
+.person-detail-header .info .relation-tag { display: inline-block; background: rgba(168,85,247,0.15); color: var(--purple); padding: 5px 12px; border-radius: 10px; font-size: 13px; }
+.person-dreams { margin-top: 20px; }
+.person-dreams h4 { font-size: 14px; color: var(--text-light); margin-bottom: 12px; }
+.person-dream-item { background: var(--bg); border: 1px solid var(--border); border-radius: 12px; padding: 15px; margin-bottom: 10px; cursor: pointer; }
+.person-dream-item:hover { border-color: var(--purple); }
+.person-dream-item .date { font-size: 12px; color: var(--text-light); margin-bottom: 5px; }
+.person-dream-item .title { font-size: 14px; font-weight: 500; }
+
+/* ========== 统计页面 ========== */
+.stats-section { margin-bottom: 25px; }
+.stats-section-title { font-size: 16px; font-weight: 600; margin-bottom: 15px; display: flex; align-items: center; gap: 10px; }
+.chart-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 20px; padding: 25px; margin-bottom: 20px; }
+.chart-container { height: 250px; position: relative; }
+.top-list { display: grid; gap: 12px; }
+.top-item { display: flex; align-items: center; gap: 15px; background: var(--bg); border: 1px solid var(--border); border-radius: 14px; padding: 15px 18px; }
+.top-item .rank { width: 28px; height: 28px; background: var(--gradient); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 700; color: white; }
+.top-item .top-emoji { font-size: 28px; }
+.top-item .top-info { flex: 1; }
+.top-item .top-name { font-size: 15px; font-weight: 600; }
+.top-item .top-relation { font-size: 12px; color: var(--text-light); }
+.top-item .top-count { font-size: 20px; font-weight: 700; color: var(--pink); }
+
+/* ========== 表单 ========== */
+.form-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 20px; padding: 25px; }
+.form-group { margin-bottom: 20px; }
+.form-group label { display: block; font-size: 13px; color: var(--text-light); margin-bottom: 8px; }
+.form-group input, .form-group textarea, .form-group select { width: 100%; padding: 14px; border: 2px solid var(--border); border-radius: 14px; background: var(--bg); color: var(--text); font-size: 15px; outline: none; transition: border-color 0.2s; }
+.form-group input:focus, .form-group textarea:focus, .form-group select:focus { border-color: var(--purple); }
+.form-group textarea { min-height: 150px; resize: vertical; }
+.save-btn { width: 100%; background: var(--gradient); border: none; color: white; padding: 16px; border-radius: 14px; font-size: 16px; cursor: pointer; font-weight: 600; }
+
+/* ========== 底部 ========== */
+.bottom-nav { position: fixed; bottom: 0; left: 0; right: 0; background: var(--bg-card); border-top: 1px solid var(--border); display: flex; justify-content: space-around; padding: 12px 20px; z-index: 50; }
+.bottom-nav-btn { background: none; border: none; color: var(--text-light); font-size: 11px; cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 5px 15px; border-radius: 12px; transition: all 0.2s; }
+.bottom-nav-btn .icon { font-size: 22px; }
+.bottom-nav-btn.active { color: var(--purple); }
+
+/* ========== 空状态 ========== */
+.empty-state { text-align: center; padding: 60px 20px; color: var(--text-light); }
+.empty-state .icon { font-size: 60px; margin-bottom: 15px; opacity: 0.5; }
+.empty-state p { font-size: 14px; }
+
+/* ========== 响应式 ========== */
+@media (max-width: 768px) {
+  .header h1 { font-size: 26px; letter-spacing: 5px; }
+  .stats-grid { grid-template-columns: repeat(2, 1fr); }
+  .nav { padding: 0 15px; }
+  .nav-btn { padding: 10px 14px; font-size: 13px; }
+  .modal-content { padding: 20px; margin: 10px; }
+  .analysis-selector { flex-direction: column; }
+  .analysis-style-btn { min-width: 100%; }
+}
+</style>
+</head>
+<body>
+
+<!-- 设置栏 -->
+<div class="settings-bar">
+  <button class="settings-btn" onclick="showUserModal()" id="user-btn">
+    👤 <span id="user-name-display">登录</span>
+  </button>
+  <button class="settings-btn" onclick="toggleTheme()">
+    <span id="theme-icon">☀️</span>
+  </button>
+  <button class="settings-btn" onclick="showDataModal()" id="data-btn" style="display: none;">
+    💾
+  </button>
+</div>
+
+<!-- 头部 -->
+<div class="header">
+  <h1>DreamArchive</h1>
+  <p>梦境档案馆 · 探索潜意识的深处</p>
+</div>
+
+<!-- 项目介绍 -->
+<div class="card" style="margin: 0 20px 20px; background: linear-gradient(135deg, rgba(168,85,247,0.15) 0%, rgba(6,182,212,0.15) 100%); border: 1px solid var(--border);">
+  <div style="text-align: center; padding: 10px 0;">
+    <p style="font-size: 14px; color: var(--text); line-height: 1.8; margin-bottom: 15px;">
+      一个帮助用户<strong>记录、解读和分析梦境</strong>的多用户 Web 应用
+    </p>
+    <div style="display: flex; justify-content: center; gap: 20px; flex-wrap: wrap; margin-bottom: 15px;">
+      <span style="background: var(--bg-card); padding: 6px 14px; border-radius: 20px; font-size: 12px;">🛠 纯前端架构</span>
+      <span style="background: var(--bg-card); padding: 6px 14px; border-radius: 20px; font-size: 12px;">👥 多用户系统</span>
+      <span style="background: var(--bg-card); padding: 6px 14px; border-radius: 20px; font-size: 12px;">📊 数据可视化</span>
+    </div>
+    <div style="display: flex; justify-content: center; gap: 15px; flex-wrap: wrap;">
+      <a href="https://github.com/lo00visa/dream-road" target="_blank" style="display: inline-flex; align-items: center; gap: 6px; background: var(--bg-card); padding: 8px 16px; border-radius: 20px; font-size: 13px; color: var(--text); text-decoration: none;">
+        <svg height="16" width="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/></svg>
+        GitHub
+      </a>
+      <a href="mailto:wanru.liao@outlook.com" style="display: inline-flex; align-items: center; gap: 6px; background: var(--bg-card); padding: 8px 16px; border-radius: 20px; font-size: 13px; color: var(--text); text-decoration: none;">
+        📧 wanru.liao@outlook.com
+      </a>
+    </div>
+  </div>
+</div>
+
+<!-- 功能卡片 -->
+<div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; padding: 0 20px; margin-bottom: 20px;">
+  <div class="card" style="text-align: center; padding: 20px 15px;">
+    <div style="font-size: 32px; margin-bottom: 10px;">💭</div>
+    <div style="font-size: 14px; font-weight: 600;">人物识别</div>
+    <div style="font-size: 11px; color: var(--text-light); margin-top: 5px;">AI 提取梦中人物</div>
+  </div>
+  <div class="card" style="text-align: center; padding: 20px 15px;">
+    <div style="font-size: 32px; margin-bottom: 10px;">🔮</div>
+    <div style="font-size: 14px; font-weight: 600;">四种解读</div>
+    <div style="font-size: 11px; color: var(--text-light); margin-top: 5px;">弗洛伊德/荣格/德勒兹/周公</div>
+  </div>
+  <div class="card" style="text-align: center; padding: 20px 15px;">
+    <div style="font-size: 32px; margin-bottom: 10px;">📅</div>
+    <div style="font-size: 14px; font-weight: 600;">日历视图</div>
+    <div style="font-size: 11px; color: var(--text-light); margin-top: 5px;">月度趋势可视化</div>
+  </div>
+  <div class="card" style="text-align: center; padding: 20px 15px;">
+    <div style="font-size: 32px; margin-bottom: 10px;">📊</div>
+    <div style="font-size: 14px; font-weight: 600;">数据分析</div>
+    <div style="font-size: 11px; color: var(--text-light); margin-top: 5px;">情绪/人物频次统计</div>
+  </div>
+</div>
+
+<!-- 技术栈 -->
+<div class="card" style="margin: 0 20px 20px;">
+  <div style="font-size: 13px; color: var(--text-light); margin-bottom: 12px;">⚡ 技术栈</div>
+  <div style="display: flex; flex-wrap: wrap; gap: 8px;">
+    <span style="background: #FF6B9D20; color: #FF6B9D; padding: 6px 12px; border-radius: 8px; font-size: 12px;">HTML5</span>
+    <span style="background: #5B9CFF20; color: #5B9CFF; padding: 6px 12px; border-radius: 8px; font-size: 12px;">CSS3</span>
+    <span style="background: #F59E0B20; color: #F59E0B; padding: 6px 12px; border-radius: 8px; font-size: 12px;">JavaScript ES6+</span>
+    <span style="background: #10B98120; color: #10B981; padding: 6px 12px; border-radius: 8px; font-size: 12px;">Chart.js</span>
+    <span style="background: #8B5CF620; color: #8B5CF6; padding: 6px 12px; border-radius: 8px; font-size: 12px;">localStorage</span>
+    <span style="background: #06B6D420; color: #06B6D4; padding: 6px 12px; border-radius: 8px; font-size: 12px;">响应式设计</span>
+  </div>
+  <div style="margin-top: 15px; padding-top: 15px; border-top: 1px solid var(--border);">
+    <div style="font-size: 13px; color: var(--text-light); margin-bottom: 12px;">✨ 亮点</div>
+    <ul style="font-size: 13px; color: var(--text); padding-left: 20px; line-height: 1.8;">
+      <li>多用户独立数据存储系统</li>
+      <li>多种心理学派梦境解读引擎</li>
+      <li>实时数据可视化分析</li>
+      <li>支持数据导入导出功能</li>
+      <li>暗色/亮色主题切换</li>
+    </ul>
+  </div>
+</div>
+
+<!-- 搜索 -->
+<div class="search-section">
+  <div class="search-bar">
+    <input type="text" id="search-input" placeholder="搜索梦境：妈妈、Lyc、考研..." oninput="performSearch(this.value)">
+    <button class="search-btn" onclick="performSearch(document.getElementById('search-input').value)">🔍</button>
+  </div>
+</div>
+
+<!-- 导航 -->
+<div class="nav">
+  <button class="nav-btn active" onclick="switchPage('home')">🏠 首页</button>
+  <button class="nav-btn" onclick="switchPage('calendar')">📅 日历</button>
+  <button class="nav-btn" onclick="switchPage('people')">💭 人物</button>
+  <button class="nav-btn" onclick="switchPage('stats')">📊 统计</button>
+  <button class="nav-btn" onclick="switchPage('add')">✏️ 记录</button>
+</div>
+
+<!-- 首页 -->
+<div id="page-home" class="page active">
+  <div class="stats-grid" id="home-stats"></div>
+  <div class="filter-bar" id="filter-bar"></div>
+  <div class="dream-list" id="dream-list"></div>
+</div>
+
+<!-- 日历页 -->
+<div id="page-calendar" class="page">
+  <div class="chart-card">
+    <div class="calendar-header">
+      <div class="calendar-month" id="calendar-month-label"></div>
+      <div class="calendar-nav">
+        <button class="calendar-nav-btn" onclick="changeMonth(-1)">◀</button>
+        <button class="calendar-nav-btn" onclick="changeMonth(1)">▶</button>
+      </div>
+    </div>
+    <div class="calendar-grid" id="calendar-grid"></div>
+    <div class="calendar-stats" id="calendar-stats"></div>
+  </div>
+  <div class="chart-card" style="margin-top: 20px;">
+    <div class="stats-section-title">📈 月度趋势</div>
+    <div class="chart-container"><canvas id="monthly-chart"></canvas></div>
+  </div>
+</div>
+
+<!-- 人物页 -->
+<div id="page-people" class="page">
+  <div id="people-content"></div>
+</div>
+
+<!-- 统计页 -->
+<div id="page-stats" class="page">
+  <div class="stats-section">
+    <div class="stats-section-title">👥 人物出现频次</div>
+    <div class="top-list" id="people-ranking"></div>
+  </div>
+  <div class="chart-card">
+    <div class="stats-section-title">😊 情绪分布</div>
+    <div class="chart-container"><canvas id="emotion-chart"></canvas></div>
+  </div>
+  <div class="chart-card">
+    <div class="stats-section-title">🌙 月度记录趋势</div>
+    <div class="chart-container"><canvas id="monthly-trend-chart"></canvas></div>
+  </div>
+  <div class="chart-card">
+    <div class="stats-section-title">🔮 梦境类型分布</div>
+    <div class="chart-container"><canvas id="type-chart"></canvas></div>
+  </div>
+</div>
+
+<!-- 记录页 -->
+<div id="page-add" class="page">
+  <div class="form-card">
+    <div class="form-group">
+      <label>日期</label>
+      <input type="date" id="add-date">
+    </div>
+    <div class="form-group">
+      <label>标题</label>
+      <input type="text" id="add-title" placeholder="给梦取个名字...">
+    </div>
+    <div class="form-group">
+      <label>梦境内容</label>
+      <textarea id="add-content" placeholder="详细描述你梦到了什么..."></textarea>
+    </div>
+    <div class="form-group">
+      <label>情绪</label>
+      <select id="add-emotion">
+        <option value="😌">😌 平静</option>
+        <option value="😊">😊 开心</option>
+        <option value="😰">😰 焦虑</option>
+        <option value="🤔">🤔 困惑</option>
+        <option value="🤩">🤩 兴奋</option>
+        <option value="😢">😢 难过</option>
+        <option value="😐">😐 中性</option>
+      </select>
+    </div>
+    <button class="save-btn" onclick="saveNewDream()">保存梦境</button>
+  </div>
+</div>
+
+<!-- 梦境详情弹窗 -->
+<div id="modal" class="modal" onclick="if(event.target===this)closeModal()">
+  <div class="modal-content">
+    <div class="modal-header">
+      <div>
+        <div class="modal-title" id="modal-title"></div>
+        <div class="modal-date" id="modal-date"></div>
+      </div>
+      <button class="modal-close" onclick="closeModal()">×</button>
+    </div>
+    <div id="modal-emotion"></div>
+    <div id="modal-people"></div>
+    <div class="analysis-selector" id="analysis-selector"></div>
+    <div class="analysis-content" id="modal-analysis"></div>
+  </div>
+</div>
+
+<!-- 用户登录弹窗 -->
+<div id="user-modal" class="modal" onclick="if(event.target===this)closeUserModal()">
+  <div class="modal-content">
+    <div class="modal-header">
+      <span class="modal-title" id="user-modal-title">登录 / 注册</span>
+      <button class="modal-close" onclick="closeUserModal()">×</button>
+    </div>
+    <div id="user-modal-content">
+      <div class="form-group">
+        <label>用户名</label>
+        <input type="text" id="login-username" placeholder="输入用户名">
+      </div>
+      <div class="form-group">
+        <label>密码</label>
+        <input type="password" id="login-password" placeholder="输入密码">
+      </div>
+      <button class="save-btn" onclick="handleLogin()" style="margin-bottom: 10px;">登录</button>
+      <button class="save-btn" onclick="handleRegister()" style="background: var(--bg); border: 2px solid var(--border); color: var(--text);">注册新账号</button>
+    </div>
+  </div>
+</div>
+
+<!-- 数据管理弹窗 -->
+<div id="data-modal" class="modal" onclick="if(event.target===this)closeDataModal()">
+  <div class="modal-content">
+    <div class="modal-header">
+      <span class="modal-title">💾 数据管理</span>
+      <button class="modal-close" onclick="closeDataModal()">×</button>
+    </div>
+    <div class="data-btns" style="margin-top: 15px;">
+      <button class="data-btn" onclick="exportMyData()">📤 导出我的数据</button>
+      <button class="data-btn" onclick="document.getElementById('import-file').click()">📥 导入数据</button>
+    </div>
+    <input type="file" id="import-file" accept=".json" style="display:none" onchange="importMyData(this.files[0])">
+    <div id="data-stats" style="margin-top: 20px; text-align: center; color: var(--text-light); font-size: 13px;"></div>
+    <button class="save-btn" onclick="handleLogout()" style="margin-top: 20px; background: var(--bg); border: 2px solid var(--border); color: var(--text);">退出登录</button>
+  </div>
+</div>
+
+<!-- 底部导航 -->
+<div class="bottom-nav">
+  <button class="bottom-nav-btn active" onclick="switchPage('home')">
+    <span class="icon">🏠</span>
+    <span>首页</span>
+  </button>
+  <button class="bottom-nav-btn" onclick="switchPage('calendar')">
+    <span class="icon">📅</span>
+    <span>日历</span>
+  </button>
+  <button class="bottom-nav-btn" onclick="switchPage('people')">
+    <span class="icon">💭</span>
+    <span>人物</span>
+  </button>
+  <button class="bottom-nav-btn" onclick="switchPage('stats')">
+    <span class="icon">📊</span>
+    <span>统计</span>
+  </button>
+  <button class="bottom-nav-btn" onclick="switchPage('add')">
+    <span class="icon">✏️</span>
+    <span>记录</span>
+  </button>
+</div>
+
+<script src="dreams_data.js"></script>
+<script>
+// ========== 配置 ==========
+const ANALYSIS_STYLES = {
+  freud: {
+    id: 'freud',
+    name: '弗洛伊德',
+    icon: '🧠',
+    desc: '精神分析',
+    prompt: '从弗洛伊德精神分析角度解读：分析潜意识欲望、童年创伤、俄狄浦斯情结等深层心理机制。'
+  },
+  jung: {
+    id: 'jung',
+    name: '荣格',
+    icon: '🌟',
+    desc: '原型分析',
+    prompt: '从荣格分析心理学角度解读：分析集体无意识原型、阴影、人格面具、阿尼玛/阿尼姆斯等原型意象。'
+  },
+  deleuze: {
+    id: 'deleuze',
+    name: '德勒兹',
+    icon: '🔄',
+    desc: '哲学解读',
+    prompt: '从德勒兹哲学角度解读：分析解域化、块茎思维、生成、欲望机器等概念，探讨梦境的流动性和解构性。'
+  },
+  zhou: {
+    id: 'zhou',
+    name: '周公解梦',
+    icon: '📜',
+    desc: '传统释梦',
+    prompt: '从中国传统周公解梦角度解读：结合古代象数学说，分析梦境象征的传统含义和吉凶预示。'
+  }
+};
+
+// ========== 人物数据库 ==========
+const PERSON_DB = {
+  '妈妈': { emoji: '👩', relation: '家人', feeling: '💗', color: '#FF6B9D' },
+  '爸爸': { emoji: '👨', relation: '家人', feeling: '💗', color: '#5B9CFF' },
+  '弟弟': { emoji: '👦', relation: '家人', feeling: '💗', color: '#10B981' },
+  '外婆': { emoji: '👵', relation: '家人', feeling: '💗', color: '#F59E0B' },
+  '阿公': { emoji: '👴', relation: '家人', feeling: '💗', color: '#8B5CF6' },
+  '奶奶': { emoji: '👵', relation: '家人', feeling: '💗', color: '#EC4899' },
+  'lyc': { emoji: '💕', relation: '情感纠葛', feeling: '💔', color: '#F43F5E' },
+  'zjx': { emoji: '💔', relation: '情感纠葛', feeling: '💔', color: '#EF4444' },
+  'lyj': { emoji: '💕', relation: '情感纠葛', feeling: '💔', color: '#F43F5E' },
+  'wd': { emoji: '💔', relation: '前任', feeling: '💔', color: '#6B7280' },
+  '甘子玉': { emoji: '💕', relation: '暧昧对象', feeling: '💗', color: '#EC4899' },
+  'gzy': { emoji: '💕', relation: '暧昧对象', feeling: '💗', color: '#EC4899' },
+  '高尔夫哥': { emoji: '⛳', relation: '暧昧对象', feeling: '💗', color: '#10B981' },
+  '张小马': { emoji: '🐴', relation: '理想型', feeling: '💗', color: '#8B5CF6' },
+  '叶心仪': { emoji: '👧', relation: '同学', feeling: '🤝', color: '#06B6D4' },
+  '龙雨阳': { emoji: '🐲', relation: '朋友', feeling: '🤝', color: '#3B82F6' },
+  '龙yuyang': { emoji: '🐲', relation: '朋友', feeling: '🤝', color: '#3B82F6' },
+  '佳佳': { emoji: '👯', relation: '挚友', feeling: '💗', color: '#F59E0B' },
+  'gwq': { emoji: '👯', relation: '挚友', feeling: '🤝', color: '#10B981' },
+  'zwj': { emoji: '👤', relation: '朋友', feeling: '🤝', color: '#6B7280' },
+  '黎威': { emoji: '👤', relation: '朋友', feeling: '🤝', color: '#6B7280' },
+  '汉谟拉比': { emoji: '👑', relation: '神秘人物', feeling: '🤔', color: '#8B5CF6' },
+  '言一': { emoji: '👤', relation: '朋友', feeling: '🤝', color: '#06B6D4' },
+  'chf': { emoji: '👤', relation: '朋友', feeling: '🤝', color: '#6B7280' },
+  '陈阳': { emoji: '👤', relation: '朋友', feeling: '🤝', color: '#3B82F6' },
+  '多多': { emoji: '🐶', relation: '宠物', feeling: '💗', color: '#F59E0B' }
+};
+
+const PERSON_ALIASES = {
+  '妈妈': ['妈妈', '妈', '老妈'],
+  '爸爸': ['爸爸', '爸', '老爸'],
+  '弟弟': ['弟弟', '弟'],
+  '外婆': ['外婆', '嘎婆'],
+  '阿公': ['阿公', '外公', '嘎公'],
+  '奶奶': ['奶奶'],
+  'lyc': ['lyc', 'Lyc', 'LYC', 'lyj', 'Lyj'],
+  'zjx': ['zjx', 'Zjx', 'ZJX', 'ljx', 'Ljx'],
+  'wd': ['wd', 'Wd', 'WD'],
+  '甘子玉': ['甘子玉', '子玉', 'gzy', 'Gzy'],
+  '高尔夫哥': ['高尔夫哥', '高尔夫', '高尔夫球'],
+  '张小马': ['张小马', '小马'],
+  '叶心仪': ['叶心仪', '心仪'],
+  '龙雨阳': ['龙雨阳', '雨阳', '龙yuyang'],
+  '佳佳': ['佳佳'],
+  'gwq': ['gwq', 'Gwq', 'GWQ'],
+  'zwj': ['zwj', 'Zwj'],
+  '黎威': ['黎威'],
+  '汉谟拉比': ['汉谟拉比', '拉比'],
+  '言一': ['言一'],
+  'chf': ['chf', 'Chf'],
+  '陈阳': ['陈阳'],
+  '多多': ['多多']
+};
+
+// ========== 状态 ==========
+let dreams = [];
+let filteredDreams = [];
+let currentFilter = 'all';
+let currentMonth = new Date();
+let currentAnalysisStyle = 'freud';
+let emotionChart = null;
+let monthlyChart = null;
+let monthlyTrendChart = null;
+let typeChart = null;
+
+// ========== 用户系统 ==========
+let currentUser = null;
+
+function getUsersDB() {
+  const stored = localStorage.getItem('dreamarchive_users');
+  return stored ? JSON.parse(stored) : {};
+}
+
+function saveUsersDB(users) {
+  localStorage.setItem('dreamarchive_users', JSON.stringify(users));
+}
+
+function getUserDreams(userId) {
+  const stored = localStorage.getItem(`dreamarchive_${userId}_dreams`);
+  return stored ? JSON.parse(stored) : null;
+}
+
+function saveUserDreams(userId, data) {
+  localStorage.setItem(`dreamarchive_${userId}_dreams`, JSON.stringify(data));
+}
+
+function initUser() {
+  // 检查是否有保存的登录状态
+  const lastUser = localStorage.getItem('dreamarchive_last_user');
+  
+  // 如果是lovisa且数据不存在，自动初始化
+  if (lastUser?.toLowerCase() === 'lovisa') {
+    const users = getUsersDB();
+    if (!users['lovisa']) {
+      // 创建lovisa账号
+      users['lovisa'] = {
+        password: '20030521',
+        createdAt: '2026-04-24T00:00:00.000Z',
+        settings: {}
+      };
+      saveUsersDB(users);
+      
+      // 绑定梦境数据
+      if (typeof DREAM_ARCHIVE_DATA !== 'undefined') {
+        saveUserDreams('lovisa', DREAM_ARCHIVE_DATA);
+      }
+    }
+  }
+  
+  if (lastUser) {
+    const users = getUsersDB();
+    if (users[lastUser]) {
+      currentUser = lastUser;
+      updateUserDisplay();
+      loadUserDreams();
+    }
+  }
+}
+
+function loadUserDreams() {
+  if (!currentUser) {
+    dreams = typeof DREAM_ARCHIVE_DATA !== 'undefined' ? [...DREAM_ARCHIVE_DATA] : getDefaultDreams();
+    return;
+  }
+  
+  const stored = getUserDreams(currentUser);
+  if (stored) {
+    dreams = stored;
+  } else {
+    // 新用户，使用示例数据
+    dreams = getDefaultDreams();
+  }
+  saveDreams();
+}
+
+function showUserModal() {
+  if (currentUser) {
+    // 已登录，显示数据管理
+    showDataModal();
+  } else {
+    document.getElementById('user-modal-title').textContent = '登录 / 注册';
+    document.getElementById('user-modal-content').innerHTML = `
+      <div class="form-group">
+        <label>用户名</label>
+        <input type="text" id="login-username" placeholder="输入用户名">
+      </div>
+      <div class="form-group">
+        <label>密码</label>
+        <input type="password" id="login-password" placeholder="输入密码">
+      </div>
+      <button class="save-btn" onclick="handleLogin()" style="margin-bottom: 10px;">登录</button>
+      <button class="save-btn" onclick="showRegisterForm()" style="background: var(--bg); border: 2px solid var(--border); color: var(--text);">注册新账号</button>
+    `;
+    document.getElementById('user-modal').classList.add('show');
+  }
+}
+
+function showRegisterForm() {
+  document.getElementById('user-modal-content').innerHTML = `
+    <p style="color: var(--text-light); font-size: 13px; margin-bottom: 15px;">创建一个新账号，开始记录你的梦境</p>
+    <div class="form-group">
+      <label>选择用户名</label>
+      <input type="text" id="reg-username" placeholder="3-20位字母或数字">
+    </div>
+    <div class="form-group">
+      <label>设置密码</label>
+      <input type="password" id="reg-password" placeholder="至少6位">
+    </div>
+    <div class="form-group">
+      <label>确认密码</label>
+      <input type="password" id="reg-password-confirm" placeholder="再次输入密码">
+    </div>
+    <button class="save-btn" onclick="handleRegister()" style="margin-bottom: 10px;">创建账号</button>
+    <button class="save-btn" onclick="showLoginForm()" style="background: var(--bg); border: 2px solid var(--border); color: var(--text);">返回登录</button>
+  `;
+}
+
+function showLoginForm() {
+  document.getElementById('user-modal-content').innerHTML = `
+    <div class="form-group">
+      <label>用户名</label>
+      <input type="text" id="login-username" placeholder="输入用户名">
+    </div>
+    <div class="form-group">
+      <label>密码</label>
+      <input type="password" id="login-password" placeholder="输入密码">
+    </div>
+    <button class="save-btn" onclick="handleLogin()" style="margin-bottom: 10px;">登录</button>
+    <button class="save-btn" onclick="showRegisterForm()" style="background: var(--bg); border: 2px solid var(--border); color: var(--text);">注册新账号</button>
+  `;
+}
+
+function handleLogin() {
+  const username = document.getElementById('login-username')?.value.trim();
+  const password = document.getElementById('login-password')?.value;
+  
+  if (!username || !password) {
+    alert('请输入用户名和密码');
+    return;
+  }
+  
+  // 特殊处理 lovisa 账号 - 如果不存在则自动创建
+  if (username.toLowerCase() === 'lovisa') {
+    const users = getUsersDB();
+    if (!users['lovisa']) {
+      // 自动创建 lovisa 账号
+      users['lovisa'] = {
+        password: '20030521',
+        createdAt: new Date().toISOString(),
+        settings: {}
+      };
+      saveUsersDB(users);
+      
+      // 绑定梦境数据
+      if (typeof DREAM_ARCHIVE_DATA !== 'undefined') {
+        saveUserDreams('lovisa', DREAM_ARCHIVE_DATA);
+      }
+    }
+    
+    // 验证密码
+    if (users['lovisa'].password !== password) {
+      alert('密码错误');
+      return;
+    }
+    
+    currentUser = 'lovisa';
+    localStorage.setItem('dreamarchive_last_user', 'lovisa');
+    updateUserDisplay();
+    loadUserDreams();
+    closeUserModal();
+    renderHome();
+    alert('欢迎回来，lovisa！');
+    return;
+  }
+  
+  // 普通账号登录
+  const users = getUsersDB();
+  if (!users[username] || users[username].password !== password) {
+    alert('用户名或密码错误');
+    return;
+  }
+  
+  currentUser = username;
+  localStorage.setItem('dreamarchive_last_user', username);
+  updateUserDisplay();
+  loadUserDreams();
+  closeUserModal();
+  renderHome();
+  alert(`欢迎回来，${username}！`);
+}
+
+function handleRegister() {
+  const username = document.getElementById('reg-username')?.value.trim();
+  const password = document.getElementById('reg-password')?.value;
+  const passwordConfirm = document.getElementById('reg-password-confirm')?.value;
+  
+  if (!username || !password) {
+    alert('请填写所有字段');
+    return;
+  }
+  
+  if (username.length < 3 || username.length > 20) {
+    alert('用户名需要3-20位');
+    return;
+  }
+  
+  if (!/^[a-zA-Z0-9]+$/.test(username)) {
+    alert('用户名只能包含字母和数字');
+    return;
+  }
+  
+  if (password.length < 6) {
+    alert('密码至少6位');
+    return;
+  }
+  
+  if (password !== passwordConfirm) {
+    alert('两次密码不一致');
+    return;
+  }
+  
+  const users = getUsersDB();
+  if (users[username]) {
+    alert('用户名已存在');
+    return;
+  }
+  
+  // 创建用户
+  users[username] = { 
+    password: password, 
+    createdAt: new Date().toISOString(),
+    settings: {}
+  };
+  saveUsersDB(users);
+  
+  // 如果是lovisa，初始化默认数据
+  if (username.toLowerCase() === 'lovisa') {
+    if (typeof DREAM_ARCHIVE_DATA !== 'undefined') {
+      saveUserDreams(username, DREAM_ARCHIVE_DATA);
+    }
+  }
+  
+  currentUser = username;
+  localStorage.setItem('dreamarchive_last_user', username);
+  updateUserDisplay();
+  loadUserDreams();
+  closeUserModal();
+  renderHome();
+  alert(`账号创建成功，欢迎 ${username}！你的梦境档案已准备好。`);
+}
+
+function handleLogout() {
+  if (!confirm('确定要退出登录吗？')) return;
+  currentUser = null;
+  localStorage.removeItem('dreamarchive_last_user');
+  updateUserDisplay();
+  loadUserDreams();
+  closeDataModal();
+  renderHome();
+}
+
+function updateUserDisplay() {
+  const display = document.getElementById('user-name-display');
+  const dataBtn = document.getElementById('data-btn');
+  if (display) {
+    display.textContent = currentUser || '登录';
+  }
+  if (dataBtn) {
+    dataBtn.style.display = currentUser ? 'flex' : 'none';
+  }
+}
+
+function closeUserModal() {
+  document.getElementById('user-modal')?.classList.remove('show');
+}
+
+function showDataModal() {
+  document.getElementById('data-modal').classList.add('show');
+  const stats = document.getElementById('data-stats');
+  if (stats) {
+    stats.innerHTML = `
+      <p>当前用户: <strong>${currentUser}</strong></p>
+      <p>梦境数量: <strong>${dreams.length}</strong></p>
+      <p>数据存储于本地浏览器</p>
+    `;
+  }
+}
+
+function closeDataModal() {
+  document.getElementById('data-modal')?.classList.remove('show');
+}
+
+function exportMyData() {
+  if (!currentUser) {
+    alert('请先登录');
+    return;
+  }
+  
+  const data = {
+    version: '1.0',
+    user: currentUser,
+    exportedAt: new Date().toISOString(),
+    dreams: dreams
+  };
+  
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `DreamArchive_${currentUser}_${new Date().toISOString().split('T')[0]}.json`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+function importMyData(file) {
+  if (!currentUser) {
+    alert('请先登录');
+    return;
+  }
+  
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    try {
+      const data = JSON.parse(e.target.result);
+      if (data.dreams && Array.isArray(data.dreams)) {
+        if (confirm(`将导入 ${data.dreams.length} 条梦境。是否合并到现有数据？`)) {
+          dreams = [...dreams, ...data.dreams];
+          dreams.sort((a, b) => new Date(b.date) - new Date(a.date));
+          saveUserDreams(currentUser, dreams);
+          saveDreams();
+          closeDataModal();
+          renderHome();
+          alert('导入成功！');
+        }
+      } else {
+        alert('无效的数据格式');
+      }
+    } catch (err) {
+      alert('文件解析失败');
+    }
+  };
+  reader.readAsText(file);
+}
+
+// ========== 初始化 ==========
+document.addEventListener('DOMContentLoaded', () => {
+  initUser();
+  loadDreams();
+  renderHome();
+  updateBottomNav();
+  document.getElementById('add-date').value = new Date().toISOString().split('T')[0];
+});
+
+function loadDreams() {
+  const stored = localStorage.getItem('dreamarchive_dreams');
+  if (stored) {
+    dreams = JSON.parse(stored);
+  } else if (typeof DREAM_ARCHIVE_DATA !== 'undefined') {
+    // 使用外部数据文件
+    dreams = DREAM_ARCHIVE_DATA;
+    saveDreams();
+  } else {
+    // 使用默认数据
+    dreams = getDefaultDreams();
+    saveDreams();
+  }
+}
+
+function saveDreams() {
+  if (currentUser) {
+    saveUserDreams(currentUser, dreams);
+  } else {
+    localStorage.setItem('dreamarchive_dreams', JSON.stringify(dreams));
+  }
+}
+
+function getDefaultDreams() {
+  return [
+    {
+      id: 'd_sample_1',
+      date: new Date().toISOString().split('T')[0],
+      title: '🌙 欢迎来到 DreamArchive',
+      content: '这是你的梦境档案馆。每一个梦都是通往潜意识的大门，记录它们，探索真实的自己。',
+      emotion: '😊',
+      extractedPeople: []
+    },
+    {
+      id: 'd_sample_2',
+      date: '2026-03-04',
+      title: '梦到阿公给我打电话',
+      content: '梦到阿公给我打电话，还有爸爸。然后这个看电影的哥查岗说不相信我为什么不回他消息。',
+      emotion: '😌',
+      extractedPeople: ['阿公', '爸爸']
+    },
+    {
+      id: 'd_sample_3',
+      date: '2025-11-14',
+      title: '甘子玉与橄榄球场',
+      content: '很奇怪梦到甘子玉和那个高尔夫哥是好朋友，然后gzy带我出去玩，我们去玩橄榄球。',
+      emotion: '🤔',
+      extractedPeople: ['甘子玉', '高尔夫哥']
+    }
+  ];
+}
+
+// ========== 页面切换 ==========
+function switchPage(pageId) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.getElementById('page-' + pageId).classList.add('active');
+  
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  document.querySelector(`.nav-btn[onclick="switchPage('${pageId}')"]`)?.classList.add('active');
+  
+  updateBottomNav();
+  
+  if (pageId === 'home') renderHome();
+  else if (pageId === 'calendar') renderCalendar();
+  else if (pageId === 'people') renderPeople();
+  else if (pageId === 'stats') renderStats();
+}
+
+function updateBottomNav() {
+  const activePage = document.querySelector('.page.active')?.id.replace('page-', '') || 'home';
+  document.querySelectorAll('.bottom-nav-btn').forEach(btn => {
+    btn.classList.remove('active');
+    if (btn.onclick?.toString().includes(activePage)) {
+      btn.classList.add('active');
+    }
+  });
+}
+
+// ========== 主题切换 ==========
+function toggleTheme() {
+  const isDark = document.body.getAttribute('data-theme') !== 'light';
+  document.body.setAttribute('data-theme', isDark ? 'light' : '');
+  document.getElementById('theme-icon').textContent = isDark ? '☀️' : '🌙';
+}
+
+// ========== 首页渲染 ==========
+function renderHome() {
+  // 统计数据
+  const total = dreams.length;
+  const emotionCounts = {};
+  dreams.forEach(d => {
+    emotionCounts[d.emotion] = (emotionCounts[d.emotion] || 0) + 1;
+  });
+  const topEmotion = Object.entries(emotionCounts).sort((a, b) => b[1] - a[1])[0];
+  
+  document.getElementById('home-stats').innerHTML = `
+    <div class="stat-card">
+      <div class="icon">🌙</div>
+      <div class="num">${total}</div>
+      <div class="label">梦境总数</div>
+    </div>
+    <div class="stat-card">
+      <div class="icon">👥</div>
+      <div class="num">${countPeople().total}</div>
+      <div class="label">出现人物</div>
+    </div>
+    <div class="stat-card">
+      <div class="icon">😊</div>
+      <div class="num">${topEmotion ? topEmotion[1] : 0}</div>
+      <div class="label">最常见情绪</div>
+    </div>
+    <div class="stat-card">
+      <div class="icon">📅</div>
+      <div class="num">${getMonthCount()}</div>
+      <div class="label">本月记录</div>
+    </div>
+  `;
+  
+  // 筛选标签
+  const themes = ['全部', '情感', '家庭', '焦虑', '神秘', '日常'];
+  document.getElementById('filter-bar').innerHTML = themes.map(t => `
+    <button class="filter-btn ${currentFilter === t.toLowerCase() ? 'active' : ''}" onclick="setFilter('${t.toLowerCase()}')">
+      ${t}
+    </button>
+  `).join('');
+  
+  // 渲染列表
+  applyFilter();
+}
+
+function applyFilter() {
+  let filtered = dreams;
+  if (currentFilter !== 'all') {
+    filtered = dreams.filter(d => {
+      const content = (d.title + ' ' + d.content).toLowerCase();
+      if (currentFilter === '情感') return /lyc|zjx|wd|甘子玉|高尔夫|暧昧|喜欢|爱/i.test(content);
+      if (currentFilter === '家庭') return /妈妈|爸爸|弟弟|外婆|阿公|家|亲人/i.test(content);
+      if (currentFilter === '焦虑') return /考试|考研|毕业|工作|焦虑|害怕|恐惧/i.test(content);
+      if (currentFilter === '神秘') return /鬼|超自然|神秘|奇怪/i.test(content);
+      if (currentFilter === '日常') return true;
+      return true;
+    });
+  }
+  
+  filteredDreams = filtered;
+  renderDreamList(filtered);
+}
+
+function setFilter(filter) {
+  currentFilter = filter;
+  applyFilter();
+}
+
+function renderDreamList(list) {
+  if (list.length === 0) {
+    document.getElementById('dream-list').innerHTML = `
+      <div class="empty-state">
+        <div class="icon">🌙</div>
+        <p>还没有记录梦境</p>
+        <p>点击下方"记录"开始你的梦境之旅</p>
+      </div>
+    `;
+    return;
+  }
+  
+  document.getElementById('dream-list').innerHTML = list.map(d => {
+    const people = extractPeople(d.content);
+    const peopleTags = people.slice(0, 3).map(p => `<span class="dream-tag">${PERSON_DB[p]?.emoji || '👤'} ${p}</span>`).join('');
+    
+    return `
+      <div class="dream-card" onclick="showDreamDetail('${d.id}')">
+        <div class="dream-date">
+          <span>${formatDate(d.date)}</span>
+          <span>${getWeekday(d.date)}</span>
+        </div>
+        <div class="dream-title">${d.title}</div>
+        <div class="dream-content">${d.content}</div>
+        <div class="dream-meta">
+          <span class="dream-emotion">${d.emotion}</span>
+          ${peopleTags}
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+// ========== 人物统计 ==========
+function countPeople() {
+  const counts = {};
+  dreams.forEach(d => {
+    const people = extractPeople(d.content + ' ' + d.title);
+    people.forEach(p => {
+      counts[p] = (counts[p] || 0) + 1;
+    });
+  });
+  
+  const grouped = {};
+  Object.entries(counts).forEach(([name, count]) => {
+    const info = PERSON_DB[name];
+    const relation = info?.relation || '其他';
+    if (!grouped[relation]) grouped[relation] = [];
+    grouped[relation].push({ name, count, info });
+  });
+  
+  return { total: Object.keys(counts).length, byRelation: grouped, counts };
+}
+
+function extractPeople(text) {
+  const found = [];
+  Object.entries(PERSON_ALIASES).forEach(([mainName, aliases]) => {
+    if (aliases.some(alias => text.includes(alias))) {
+      if (!found.includes(mainName)) found.push(mainName);
+    }
+  });
+  return found;
+}
+
+// ========== 人物页面 ==========
+function renderPeople() {
+  const { byRelation, counts } = countPeople();
+  
+  let html = '';
+  
+  const relationOrder = ['家人', '挚友', '朋友', '暧昧对象', '情感纠葛', '前任', '理想型', '其他'];
+  
+  relationOrder.forEach(relation => {
+    if (!byRelation[relation]) return;
+    
+    const people = byRelation[relation].sort((a, b) => b.count - a.count);
+    
+    html += `
+      <div class="people-section">
+        <div class="people-section-title">
+          ${getRelationIcon(relation)} ${relation}
+        </div>
+        <div class="people-grid">
+          ${people.map(p => `
+            <div class="person-card" onclick="showPersonDetail('${p.name}')">
+              <div class="emoji">${p.info?.emoji || '👤'}</div>
+              <div class="name">${p.name}</div>
+              <div class="relation">${p.count}次出现</div>
+              <div class="count">${p.count}</div>
+              <div class="count-label">次</div>
+            </div>
+          `).join('')}
+        </div>
+      </div>
+    `;
+  });
+  
+  document.getElementById('people-content').innerHTML = html || '<div class="empty-state"><div class="icon">👻</div><p>还没有人物数据</p></div>';
+}
+
+function getRelationIcon(relation) {
+  const icons = {
+    '家人': '👨‍👩‍👧', '挚友': '👯', '朋友': '🤝', '暧昧对象': '💕',
+    '情感纠葛': '💔', '前任': '💔', '理想型': '✨', '其他': '👤'
+  };
+  return icons[relation] || '👤';
+}
+
+function showPersonDetail(name) {
+  const info = PERSON_DB[name];
+  const personDreams = dreams.filter(d => 
+    extractPeople(d.content + ' ' + d.title).includes(name)
+  );
+  
+  document.getElementById('people-content').innerHTML = `
+    <div class="person-detail active">
+      <button onclick="renderPeople()" style="background: var(--bg); border: 1px solid var(--border); border-radius: 10px; padding: 8px 16px; cursor: pointer; color: var(--text); margin-bottom: 20px;">
+        ← 返回人物列表
+      </button>
+      <div class="person-detail-header">
+        <div class="emoji">${info?.emoji || '👤'}</div>
+        <div class="info">
+          <h2>${name}</h2>
+          <span class="relation-tag">${info?.relation || '其他'}</span>
+          <p style="margin-top: 10px; color: var(--text-light); font-size: 14px;">
+            在你的梦里出现了 <strong style="color: var(--pink)">${personDreams.length}</strong> 次
+          </p>
+        </div>
+      </div>
+      <div class="person-dreams">
+        <h4>📜 相关梦境</h4>
+        ${personDreams.map(d => `
+          <div class="person-dream-item" onclick="showDreamDetail('${d.id}')">
+            <div class="date">${formatDate(d.date)} ${getWeekday(d.date)}</div>
+            <div class="title">${d.title}</div>
+          </div>
+        `).join('')}
+      </div>
+    </div>
+  `;
+}
+
+// ========== 日历页面 ==========
+function renderCalendar() {
+  const year = currentMonth.getFullYear();
+  const month = currentMonth.getMonth();
+  
+  document.getElementById('calendar-month-label').textContent = `${year}年${month + 1}月`;
+  
+  const firstDay = new Date(year, month, 1);
+  const lastDay = new Date(year, month + 1, 0);
+  const startWeekday = firstDay.getDay();
+  
+  // 统计数据
+  const monthDreams = dreams.filter(d => {
+    const dDate = new Date(d.date);
+    return dDate.getFullYear() === year && dDate.getMonth() === month;
+  });
+  
+  const emotionCounts = {};
+  monthDreams.forEach(d => {
+    emotionCounts[d.emotion] = (emotionCounts[d.emotion] || 0) + 1;
+  });
+  
+  // 星期标题
+  let html = ['日', '一', '二', '三', '四', '五', '六'].map(d => 
+    `<div class="calendar-weekday">${d}</div>`
+  ).join('');
+  
+  // 日期
+  const today = new Date();
+  for (let i = 0; i < startWeekday; i++) {
+    html += '<div class="calendar-day" style="opacity: 0;"></div>';
+  }
+  
+  for (let day = 1; day <= lastDay.getDate(); day++) {
+    const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+    const dayDreams = dreams.filter(d => d.date === dateStr);
+    const isToday = today.getFullYear() === year && today.getMonth() === month && today.getDate() === day;
+    const hasDream = dayDreams.length > 0;
+    
+    html += `
+      <div class="calendar-day ${hasDream ? 'has-dream' : ''} ${isToday ? 'today' : ''}" 
+           onclick="${hasDream ? `showDayDreams('${dateStr}')` : ''}">
+        <span>${day}</span>
+        ${hasDream ? `<span class="day-count">${dayDreams.length}个</span>` : ''}
+      </div>
+    `;
+  }
+  
+  document.getElementById('calendar-grid').innerHTML = html;
+  
+  // 统计卡片
+  document.getElementById('calendar-stats').innerHTML = `
+    <div class="calendar-stat-card">
+      <div class="stat-label">本月记录</div>
+      <div class="stat-value">${monthDreams.length}</div>
+      <div class="stat-sub">梦境</div>
+    </div>
+    <div class="calendar-stat-card">
+      <div class="stat-label">活跃天数</div>
+      <div class="stat-value">${new Set(monthDreams.map(d => d.date)).size}</div>
+      <div class="stat-sub">天</div>
+    </div>
+  `;
+  
+  // 渲染月度趋势图
+  renderMonthlyChart();
+}
+
+function changeMonth(delta) {
+  currentMonth.setMonth(currentMonth.getMonth() + delta);
+  renderCalendar();
+}
+
+function showDayDreams(dateStr) {
+  const dayDreams = dreams.filter(d => d.date === dateStr);
+  if (dayDreams.length > 0) {
+    filteredDreams = dayDreams;
+    switchPage('home');
+    document.getElementById('search-input').value = dateStr;
+    performSearch(dateStr);
+  }
+}
+
+function renderMonthlyChart() {
+  const ctx = document.getElementById('monthly-chart').getContext('2d');
+  if (monthlyChart) monthlyChart.destroy();
+  
+  // 获取近6个月数据
+  const labels = [];
+  const data = [];
+  for (let i = 5; i >= 0; i--) {
+    const d = new Date();
+    d.setMonth(d.getMonth() - i);
+    labels.push(`${d.getMonth() + 1}月`);
+    
+    const count = dreams.filter(dream => {
+      const dreamDate = new Date(dream.date);
+      return dreamDate.getFullYear() === d.getFullYear() && dreamDate.getMonth() === d.getMonth();
+    }).length;
+    data.push(count);
+  }
+  
+  monthlyChart = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [{
+        label: '梦境数量',
+        data,
+        backgroundColor: 'rgba(168, 85, 247, 0.6)',
+        borderColor: 'rgba(168, 85, 247, 1)',
+        borderWidth: 2,
+        borderRadius: 8
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: {
+        y: { beginAtZero: true, grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#8B8AA0' } },
+        x: { grid: { display: false }, ticks: { color: '#8B8AA0' } }
+      }
+    }
+  });
+}
+
+// ========== 统计页面 ==========
+function renderStats() {
+  renderPeopleRanking();
+  renderEmotionChart();
+  renderMonthlyTrendChart();
+  renderTypeChart();
+}
+
+function renderPeopleRanking() {
+  const { counts } = countPeople();
+  const sorted = Object.entries(counts).sort((a, b) => b[1] - a[1]).slice(0, 10);
+  
+  document.getElementById('people-ranking').innerHTML = sorted.map(([name, count], i) => {
+    const info = PERSON_DB[name];
+    return `
+      <div class="top-item">
+        <div class="rank">${i + 1}</div>
+        <div class="top-emoji">${info?.emoji || '👤'}</div>
+        <div class="top-info">
+          <div class="top-name">${name}</div>
+          <div class="top-relation">${info?.relation || '其他'}</div>
+        </div>
+        <div class="top-count">${count}</div>
+      </div>
+    `;
+  }).join('');
+}
+
+function renderEmotionChart() {
+  const ctx = document.getElementById('emotion-chart').getContext('2d');
+  if (emotionChart) emotionChart.destroy();
+  
+  const counts = {};
+  dreams.forEach(d => {
+    counts[d.emotion] = (counts[d.emotion] || 0) + 1;
+  });
+  
+  const labels = Object.keys(counts);
+  const data = Object.values(counts);
+  const colors = ['#FF6B9D', '#5B9CFF', '#10B981', '#F59E0B', '#8B5CF6', '#EC4899', '#06B6D4'];
+  
+  emotionChart = new Chart(ctx, {
+    type: 'doughnut',
+    data: {
+      labels,
+      datasets: [{
+        data,
+        backgroundColor: colors.slice(0, labels.length),
+        borderWidth: 0
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { position: 'right', labels: { color: '#E8E6F0', padding: 15 } }
+      }
+    }
+  });
+}
+
+function renderMonthlyTrendChart() {
+  const ctx = document.getElementById('monthly-trend-chart').getContext('2d');
+  if (monthlyTrendChart) monthlyTrendChart.destroy();
+  
+  const labels = [];
+  const data = [];
+  for (let i = 11; i >= 0; i--) {
+    const d = new Date();
+    d.setMonth(d.getMonth() - i);
+    labels.push(`${d.getMonth() + 1}月`);
+    
+    const count = dreams.filter(dream => {
+      const dreamDate = new Date(dream.date);
+      return dreamDate.getFullYear() === d.getFullYear() && dreamDate.getMonth() === d.getMonth();
+    }).length;
+    data.push(count);
+  }
+  
+  monthlyTrendChart = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels,
+      datasets: [{
+        label: '梦境数量',
+        data,
+        borderColor: '#FF6B9D',
+        backgroundColor: 'rgba(255, 107, 157, 0.1)',
+        fill: true,
+        tension: 0.4,
+        pointBackgroundColor: '#FF6B9D'
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: {
+        y: { beginAtZero: true, grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#8B8AA0' } },
+        x: { grid: { display: false }, ticks: { color: '#8B8AA0' } }
+      }
+    }
+  });
+}
+
+function renderTypeChart() {
+  const ctx = document.getElementById('type-chart').getContext('2d');
+  if (typeChart) typeChart.destroy();
+  
+  // 基于内容推断梦境类型
+  const types = { '情感': 0, '家庭': 0, '焦虑': 0, '冒险': 0, '神秘': 0, '日常': 0 };
+  dreams.forEach(d => {
+    const content = (d.title + ' ' + d.content).toLowerCase();
+    if (/lyc|zjx|wd|甘子玉|暧昧|喜欢|爱/i.test(content)) types['情感']++;
+    if (/妈妈|爸爸|弟弟|外婆|阿公|家|亲人/i.test(content)) types['家庭']++;
+    if (/考试|考研|毕业|工作|焦虑|害怕|恐惧/i.test(content)) types['焦虑']++;
+    if (/奇怪|神秘|超自然|鬼|灵异/i.test(content)) types['神秘']++;
+    if (/走路|开车|旅行|去|来/i.test(content)) types['冒险']++;
+    types['日常']++;
+  });
+  
+  typeChart = new Chart(ctx, {
+    type: 'polarArea',
+    data: {
+      labels: Object.keys(types),
+      datasets: [{
+        data: Object.values(types),
+        backgroundColor: ['rgba(255,107,157,0.7)', 'rgba(91,156,255,0.7)', 'rgba(239,68,68,0.7)', 'rgba(16,185,129,0.7)', 'rgba(139,92,246,0.7)', 'rgba(245,158,11,0.7)']
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: { legend: { position: 'right', labels: { color: '#E8E6F0' } } },
+      scales: {
+        r: { grid: { color: 'rgba(255,255,255,0.1)' }, ticks: { display: false } }
+      }
+    }
+  });
+}
+
+// ========== 梦境详情 ==========
+function showDreamDetail(id) {
+  const dream = dreams.find(d => d.id === id);
+  if (!dream) return;
+  
+  document.getElementById('modal-title').textContent = dream.title;
+  document.getElementById('modal-date').textContent = `${formatDate(dream.date)} ${getWeekday(dream.date)}`;
+  document.getElementById('modal-emotion').innerHTML = `<span style="display: inline-block; background: var(--bg); padding: 8px 16px; border-radius: 12px; margin-bottom: 15px;">${dream.emotion}</span>`;
+  
+  // 人物标签
+  const people = extractPeople(dream.content + ' ' + dream.title);
+  document.getElementById('modal-people').innerHTML = people.length > 0 ? 
+    `<div style="margin-bottom: 15px; display: flex; flex-wrap: wrap; gap: 8px;">
+      ${people.map(p => `<span class="dream-tag">${PERSON_DB[p]?.emoji || '👤'} ${p}</span>`).join('')}
+    </div>` : '';
+  
+  // 解读风格选择
+  document.getElementById('analysis-selector').innerHTML = Object.values(ANALYSIS_STYLES).map(style => `
+    <button class="analysis-style-btn ${currentAnalysisStyle === style.id ? 'active' : ''}" onclick="changeAnalysisStyle('${style.id}')">
+      <div class="style-icon">${style.icon}</div>
+      <div class="style-name">${style.name}</div>
+      <div class="style-desc">${style.desc}</div>
+    </button>
+  `).join('');
+  
+  // 内容
+  document.getElementById('modal-analysis').innerHTML = `
+    <h3>📝 梦境内容</h3>
+    <p>${dream.content}</p>
+    <hr style="border: none; border-top: 1px solid var(--border); margin: 20px 0;">
+    <h3>${ANALYSIS_STYLES[currentAnalysisStyle].icon} ${ANALYSIS_STYLES[currentAnalysisStyle].name}式解读</h3>
+    <div id="analysis-result">${dream.analysis?.[currentAnalysisStyle] || generateAnalysis(dream.content, currentAnalysisStyle)}</div>
+  `;
+  
+  document.getElementById('modal').classList.add('show');
+}
+
+function changeAnalysisStyle(styleId) {
+  currentAnalysisStyle = styleId;
+  const dreamId = document.getElementById('modal-title')?.textContent;
+  if (dreamId) {
+    const dream = dreams.find(d => d.title === document.getElementById('modal-title').textContent);
+    if (dream) {
+      document.querySelectorAll('.analysis-style-btn').forEach(btn => btn.classList.remove('active'));
+      document.querySelector(`.analysis-style-btn[onclick="changeAnalysisStyle('${styleId}')"]`)?.classList.add('active');
+      document.getElementById('analysis-result').innerHTML = generateAnalysis(dream.content, styleId);
+    }
+  }
+}
+
+function generateAnalysis(content, style) {
+  const analyses = {
+    freud: {
+      intro: '从弗洛伊德精神分析的视角来看，这个梦境揭示了潜意识中未被表达的欲望和冲突。',
+      themes: [
+        '潜意识欲望：梦中出现的人物往往是内心欲望的投射',
+        '童年记忆：早期经历在梦中以象征形式重现',
+        '压抑机制：清醒时被压抑的情感在睡眠中浮现'
+      ],
+      conclusion: '建议关注梦中反复出现的情感模式，这可能指向内心深处未被解决的议题。'
+    },
+    jung: {
+      intro: '荣格认为梦是通往集体无意识的窗口。这个梦境中包含了丰富的原型意象。',
+      themes: [
+        '阴影（Shadow）：梦中出现的某些人物可能代表你性格中被否认的一面',
+        '人格面具（Persona）：你在梦中如何呈现自己，反映了社会角色的扮演',
+        '阿尼玛/阿尼姆斯：梦中异性的出现可能象征内在的异性特质'
+      ],
+      conclusion: '尝试接纳梦中的各种意象，它们都是你完整人格的一部分。'
+    },
+    deleuze: {
+      intro: '德勒兹的欲望哲学将梦境视为解域化的场域——边界消融、身份流动。',
+      themes: [
+        '解域化（Deterritorialization）：梦中时间空间的流动打破了日常逻辑',
+        '块茎思维（Rhizome）：梦境以非线性、多中心的方式展开',
+        '生成（Becoming）：梦中的你不是"你"，而是一种生成状态'
+      ],
+      conclusion: '不要试图"解读"梦，而是体验它——让它自由流动，捕捉那些转瞬即逝的感受。'
+    },
+    zhou: {
+      intro: '《周公解梦》认为梦境与现实存在象征对应关系。梦中之人、之物皆有征兆。',
+      themes: [
+        '人物象征：梦见不同的人对应不同的运势和人际关系',
+        '场景寓意：梦中的地点暗示当前生活状态',
+        '意象吉凶：某些特定意象在传统文化中有明确的解释'
+      ],
+      conclusion: '传统解梦强调"日有所思，夜有所梦"，梦境是身心状态的反映。'
+    }
+  };
+  
+  const a = analyses[style];
+  return `
+    <p>${a.intro}</p>
+    <h3>🔮 主题分析</h3>
+    <ul style="margin: 15px 0; padding-left: 20px;">
+      ${a.themes.map(t => `<li style="margin-bottom: 10px;">${t}</li>`).join('')}
+    </ul>
+    <h3>💡 温和提醒</h3>
+    <p>${a.conclusion}</p>
+    <table>
+      <tr><th>元素</th><th>象征意义</th></tr>
+      ${extractPeople(content).slice(0, 5).map(p => `<tr><td>${p}</td><td>${PERSON_DB[p]?.relation || '未知'}</td></tr>`).join('')}
+    </table>
+  `;
+}
+
+function closeModal() {
+  document.getElementById('modal').classList.remove('show');
+}
+
+// ========== 搜索 ==========
+function performSearch(query) {
+  if (!query.trim()) {
+    applyFilter();
+    return;
+  }
+  
+  const lowerQuery = query.toLowerCase();
+  filteredDreams = dreams.filter(d => 
+    d.title.toLowerCase().includes(lowerQuery) ||
+    d.content.toLowerCase().includes(lowerQuery) ||
+    d.date.includes(query)
+  );
+  
+  renderDreamList(filteredDreams);
+}
+
+// ========== 保存梦境 ==========
+function saveNewDream() {
+  const date = document.getElementById('add-date').value;
+  const title = document.getElementById('add-title').value.trim();
+  const content = document.getElementById('add-content').value.trim();
+  const emotion = document.getElementById('add-emotion').value;
+  
+  if (!title || !content) {
+    alert('请填写标题和内容');
+    return;
+  }
+  
+  const newDream = {
+    id: 'd_' + Date.now(),
+    date: date || new Date().toISOString().split('T')[0],
+    title,
+    content,
+    emotion,
+    analysis: {},
+    extractedPeople: extractPeople(content)
+  };
+  
+  dreams.unshift(newDream);
+  saveDreams();
+  
+  // 清空表单
+  document.getElementById('add-title').value = '';
+  document.getElementById('add-content').value = '';
+  
+  switchPage('home');
+}
+
+// ========== 工具函数 ==========
+function formatDate(dateStr) {
+  const d = new Date(dateStr);
+  return `${d.getFullYear()}.${String(d.getMonth() + 1).padStart(2, '0')}.${String(d.getDate()).padStart(2, '0')}`;
+}
+
+function getWeekday(dateStr) {
+  const days = ['周日', '周一', '周二', '周三', '周四', '周五', '周六'];
+  return days[new Date(dateStr).getDay()];
+}
+
+function getMonthCount() {
+  const now = new Date();
+  return dreams.filter(d => {
+    const dDate = new Date(d.date);
+    return dDate.getFullYear() === now.getFullYear() && dDate.getMonth() === now.getMonth();
+  }).length;
+}
+</script>
+</body>
+</html>
