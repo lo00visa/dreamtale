@@ -36,6 +36,127 @@
 * { margin: 0; padding: 0; box-sizing: border-box; }
 body { font-family: -apple-system, BlinkMacSystemFont, 'PingFang SC', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; padding-bottom: 100px; transition: background 0.3s, color 0.3s; }
 
+/* ========== 登录页 ========== */
+.login-page {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: var(--bg);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  padding: 20px;
+  z-index: 2000;
+}
+.login-page.hidden { display: none; }
+.login-glow {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 500px;
+  height: 500px;
+  background: radial-gradient(circle, rgba(168,85,247,0.2) 0%, transparent 70%);
+  pointer-events: none;
+}
+.login-box {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 28px;
+  padding: 40px 35px;
+  width: 100%;
+  max-width: 380px;
+  position: relative;
+  z-index: 1;
+}
+.login-title {
+  text-align: center;
+  margin-bottom: 35px;
+}
+.login-title h1 {
+  font-size: 28px;
+  font-weight: 300;
+  letter-spacing: 6px;
+  background: var(--gradient);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  margin-bottom: 8px;
+}
+.login-title p {
+  color: var(--text-light);
+  font-size: 13px;
+  letter-spacing: 1px;
+}
+.login-form { width: 100%; }
+.login-form .form-group {
+  margin-bottom: 18px;
+}
+.login-form label {
+  display: block;
+  font-size: 12px;
+  color: var(--text-light);
+  margin-bottom: 8px;
+}
+.login-form input {
+  width: 100%;
+  padding: 14px 16px;
+  border: 2px solid var(--border);
+  border-radius: 14px;
+  background: var(--bg);
+  color: var(--text);
+  font-size: 15px;
+  outline: none;
+  transition: border-color 0.2s;
+}
+.login-form input:focus { border-color: var(--purple); }
+.login-form input::placeholder { color: var(--text-light); }
+.login-btn {
+  width: 100%;
+  background: var(--gradient);
+  border: none;
+  color: white;
+  padding: 16px;
+  border-radius: 14px;
+  font-size: 16px;
+  cursor: pointer;
+  font-weight: 600;
+  margin-top: 10px;
+  transition: opacity 0.2s;
+}
+.login-btn:hover { opacity: 0.9; }
+.login-btn:active { opacity: 0.8; }
+.login-toggle {
+  text-align: center;
+  margin-top: 20px;
+  font-size: 13px;
+  color: var(--text-light);
+}
+.login-toggle a {
+  color: var(--purple);
+  cursor: pointer;
+  text-decoration: none;
+}
+.login-toggle a:hover { text-decoration: underline; }
+.login-error {
+  background: rgba(239, 68, 68, 0.15);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  border-radius: 10px;
+  padding: 12px;
+  margin-bottom: 18px;
+  color: #EF4444;
+  font-size: 13px;
+  text-align: center;
+  display: none;
+}
+.login-error.show { display: block; }
+
+/* ========== 主应用（未登录时隐藏） ========== */
+.main-app { display: none; }
+.main-app.show { display: block; }
+
 /* ========== 头部 ========== */
 .header { text-align: center; padding: 50px 20px 30px; position: relative; }
 .header::before { content: ''; position: absolute; top: 0; left: 50%; transform: translateX(-50%); width: 300px; height: 300px; background: radial-gradient(circle, rgba(168,85,247,0.15) 0%, transparent 70%); pointer-events: none; }
@@ -204,278 +325,282 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'PingFang SC', sans-serif
   .modal-content { padding: 20px; margin: 10px; }
   .analysis-selector { flex-direction: column; }
   .analysis-style-btn { min-width: 100%; }
+  .login-box { padding: 30px 25px; }
 }
 </style>
 </head>
 <body>
 
-<!-- 设置栏 -->
-<div class="settings-bar">
-  <button class="settings-btn" onclick="showUserModal()" id="user-btn">
-    👤 <span id="user-name-display">登录</span>
-  </button>
-  <button class="settings-btn" onclick="toggleTheme()">
-    <span id="theme-icon">☀️</span>
-  </button>
-  <button class="settings-btn" onclick="showDataModal()" id="data-btn" style="display: none;">
-    💾
-  </button>
-</div>
-
-<!-- 头部 -->
-<div class="header">
-  <h1>DreamArchive</h1>
-  <p>梦境档案馆 · 探索潜意识的深处</p>
-</div>
-
-<!-- 项目介绍 -->
-<div class="card" style="margin: 0 20px 20px; background: linear-gradient(135deg, rgba(168,85,247,0.15) 0%, rgba(6,182,212,0.15) 100%); border: 1px solid var(--border);">
-  <div style="text-align: center; padding: 10px 0;">
-    <p style="font-size: 14px; color: var(--text); line-height: 1.8; margin-bottom: 15px;">
-      一个帮助用户<strong>记录、解读和分析梦境</strong>的多用户 Web 应用
-    </p>
-    <div style="display: flex; justify-content: center; gap: 20px; flex-wrap: wrap; margin-bottom: 15px;">
-      <span style="background: var(--bg-card); padding: 6px 14px; border-radius: 20px; font-size: 12px;">🛠 纯前端架构</span>
-      <span style="background: var(--bg-card); padding: 6px 14px; border-radius: 20px; font-size: 12px;">👥 多用户系统</span>
-      <span style="background: var(--bg-card); padding: 6px 14px; border-radius: 20px; font-size: 12px;">📊 数据可视化</span>
+<!-- ========== 登录页 ========== -->
+<div class="login-page" id="login-page">
+  <div class="login-glow"></div>
+  <div class="login-box">
+    <div class="login-title">
+      <h1>DreamArchive</h1>
+      <p>梦境档案馆 · 探索潜意识的深处</p>
     </div>
-    <div style="display: flex; justify-content: center; gap: 15px; flex-wrap: wrap;">
-      <a href="https://github.com/lo00visa/dream-road" target="_blank" style="display: inline-flex; align-items: center; gap: 6px; background: var(--bg-card); padding: 8px 16px; border-radius: 20px; font-size: 13px; color: var(--text); text-decoration: none;">
-        <svg height="16" width="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/></svg>
-        GitHub
-      </a>
-      <a href="mailto:wanru.liao@outlook.com" style="display: inline-flex; align-items: center; gap: 6px; background: var(--bg-card); padding: 8px 16px; border-radius: 20px; font-size: 13px; color: var(--text); text-decoration: none;">
-        📧 wanru.liao@outlook.com
-      </a>
-    </div>
-  </div>
-</div>
-
-<!-- 功能卡片 -->
-<div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; padding: 0 20px; margin-bottom: 20px;">
-  <div class="card" style="text-align: center; padding: 20px 15px;">
-    <div style="font-size: 32px; margin-bottom: 10px;">💭</div>
-    <div style="font-size: 14px; font-weight: 600;">人物识别</div>
-    <div style="font-size: 11px; color: var(--text-light); margin-top: 5px;">AI 提取梦中人物</div>
-  </div>
-  <div class="card" style="text-align: center; padding: 20px 15px;">
-    <div style="font-size: 32px; margin-bottom: 10px;">🔮</div>
-    <div style="font-size: 14px; font-weight: 600;">四种解读</div>
-    <div style="font-size: 11px; color: var(--text-light); margin-top: 5px;">弗洛伊德/荣格/德勒兹/周公</div>
-  </div>
-  <div class="card" style="text-align: center; padding: 20px 15px;">
-    <div style="font-size: 32px; margin-bottom: 10px;">📅</div>
-    <div style="font-size: 14px; font-weight: 600;">日历视图</div>
-    <div style="font-size: 11px; color: var(--text-light); margin-top: 5px;">月度趋势可视化</div>
-  </div>
-  <div class="card" style="text-align: center; padding: 20px 15px;">
-    <div style="font-size: 32px; margin-bottom: 10px;">📊</div>
-    <div style="font-size: 14px; font-weight: 600;">数据分析</div>
-    <div style="font-size: 11px; color: var(--text-light); margin-top: 5px;">情绪/人物频次统计</div>
-  </div>
-</div>
-
-<!-- 技术栈 -->
-<div class="card" style="margin: 0 20px 20px;">
-  <div style="font-size: 13px; color: var(--text-light); margin-bottom: 12px;">⚡ 技术栈</div>
-  <div style="display: flex; flex-wrap: wrap; gap: 8px;">
-    <span style="background: #FF6B9D20; color: #FF6B9D; padding: 6px 12px; border-radius: 8px; font-size: 12px;">HTML5</span>
-    <span style="background: #5B9CFF20; color: #5B9CFF; padding: 6px 12px; border-radius: 8px; font-size: 12px;">CSS3</span>
-    <span style="background: #F59E0B20; color: #F59E0B; padding: 6px 12px; border-radius: 8px; font-size: 12px;">JavaScript ES6+</span>
-    <span style="background: #10B98120; color: #10B981; padding: 6px 12px; border-radius: 8px; font-size: 12px;">Chart.js</span>
-    <span style="background: #8B5CF620; color: #8B5CF6; padding: 6px 12px; border-radius: 8px; font-size: 12px;">localStorage</span>
-    <span style="background: #06B6D420; color: #06B6D4; padding: 6px 12px; border-radius: 8px; font-size: 12px;">响应式设计</span>
-  </div>
-  <div style="margin-top: 15px; padding-top: 15px; border-top: 1px solid var(--border);">
-    <div style="font-size: 13px; color: var(--text-light); margin-bottom: 12px;">✨ 亮点</div>
-    <ul style="font-size: 13px; color: var(--text); padding-left: 20px; line-height: 1.8;">
-      <li>多用户独立数据存储系统</li>
-      <li>多种心理学派梦境解读引擎</li>
-      <li>实时数据可视化分析</li>
-      <li>支持数据导入导出功能</li>
-      <li>暗色/亮色主题切换</li>
-    </ul>
-  </div>
-</div>
-
-<!-- 搜索 -->
-<div class="search-section">
-  <div class="search-bar">
-    <input type="text" id="search-input" placeholder="搜索梦境：妈妈、Lyc、考研..." oninput="performSearch(this.value)">
-    <button class="search-btn" onclick="performSearch(document.getElementById('search-input').value)">🔍</button>
-  </div>
-</div>
-
-<!-- 导航 -->
-<div class="nav">
-  <button class="nav-btn active" onclick="switchPage('home')">🏠 首页</button>
-  <button class="nav-btn" onclick="switchPage('calendar')">📅 日历</button>
-  <button class="nav-btn" onclick="switchPage('people')">💭 人物</button>
-  <button class="nav-btn" onclick="switchPage('stats')">📊 统计</button>
-  <button class="nav-btn" onclick="switchPage('add')">✏️ 记录</button>
-</div>
-
-<!-- 首页 -->
-<div id="page-home" class="page active">
-  <div class="stats-grid" id="home-stats"></div>
-  <div class="filter-bar" id="filter-bar"></div>
-  <div class="dream-list" id="dream-list"></div>
-</div>
-
-<!-- 日历页 -->
-<div id="page-calendar" class="page">
-  <div class="chart-card">
-    <div class="calendar-header">
-      <div class="calendar-month" id="calendar-month-label"></div>
-      <div class="calendar-nav">
-        <button class="calendar-nav-btn" onclick="changeMonth(-1)">◀</button>
-        <button class="calendar-nav-btn" onclick="changeMonth(1)">▶</button>
-      </div>
-    </div>
-    <div class="calendar-grid" id="calendar-grid"></div>
-    <div class="calendar-stats" id="calendar-stats"></div>
-  </div>
-  <div class="chart-card" style="margin-top: 20px;">
-    <div class="stats-section-title">📈 月度趋势</div>
-    <div class="chart-container"><canvas id="monthly-chart"></canvas></div>
-  </div>
-</div>
-
-<!-- 人物页 -->
-<div id="page-people" class="page">
-  <div id="people-content"></div>
-</div>
-
-<!-- 统计页 -->
-<div id="page-stats" class="page">
-  <div class="stats-section">
-    <div class="stats-section-title">👥 人物出现频次</div>
-    <div class="top-list" id="people-ranking"></div>
-  </div>
-  <div class="chart-card">
-    <div class="stats-section-title">😊 情绪分布</div>
-    <div class="chart-container"><canvas id="emotion-chart"></canvas></div>
-  </div>
-  <div class="chart-card">
-    <div class="stats-section-title">🌙 月度记录趋势</div>
-    <div class="chart-container"><canvas id="monthly-trend-chart"></canvas></div>
-  </div>
-  <div class="chart-card">
-    <div class="stats-section-title">🔮 梦境类型分布</div>
-    <div class="chart-container"><canvas id="type-chart"></canvas></div>
-  </div>
-</div>
-
-<!-- 记录页 -->
-<div id="page-add" class="page">
-  <div class="form-card">
-    <div class="form-group">
-      <label>日期</label>
-      <input type="date" id="add-date">
-    </div>
-    <div class="form-group">
-      <label>标题</label>
-      <input type="text" id="add-title" placeholder="给梦取个名字...">
-    </div>
-    <div class="form-group">
-      <label>梦境内容</label>
-      <textarea id="add-content" placeholder="详细描述你梦到了什么..."></textarea>
-    </div>
-    <div class="form-group">
-      <label>情绪</label>
-      <select id="add-emotion">
-        <option value="😌">😌 平静</option>
-        <option value="😊">😊 开心</option>
-        <option value="😰">😰 焦虑</option>
-        <option value="🤔">🤔 困惑</option>
-        <option value="🤩">🤩 兴奋</option>
-        <option value="😢">😢 难过</option>
-        <option value="😐">😐 中性</option>
-      </select>
-    </div>
-    <button class="save-btn" onclick="saveNewDream()">保存梦境</button>
-  </div>
-</div>
-
-<!-- 梦境详情弹窗 -->
-<div id="modal" class="modal" onclick="if(event.target===this)closeModal()">
-  <div class="modal-content">
-    <div class="modal-header">
-      <div>
-        <div class="modal-title" id="modal-title"></div>
-        <div class="modal-date" id="modal-date"></div>
-      </div>
-      <button class="modal-close" onclick="closeModal()">×</button>
-    </div>
-    <div id="modal-emotion"></div>
-    <div id="modal-people"></div>
-    <div class="analysis-selector" id="analysis-selector"></div>
-    <div class="analysis-content" id="modal-analysis"></div>
-  </div>
-</div>
-
-<!-- 用户登录弹窗 -->
-<div id="user-modal" class="modal" onclick="if(event.target===this)closeUserModal()">
-  <div class="modal-content">
-    <div class="modal-header">
-      <span class="modal-title" id="user-modal-title">登录 / 注册</span>
-      <button class="modal-close" onclick="closeUserModal()">×</button>
-    </div>
-    <div id="user-modal-content">
+    <div class="login-error" id="login-error">用户名或密码错误</div>
+    <div class="login-form" id="login-form">
       <div class="form-group">
         <label>用户名</label>
-        <input type="text" id="login-username" placeholder="输入用户名">
+        <input type="text" id="login-username" placeholder="输入用户名" autocomplete="username">
       </div>
       <div class="form-group">
         <label>密码</label>
-        <input type="password" id="login-password" placeholder="输入密码">
+        <input type="password" id="login-password" placeholder="输入密码" autocomplete="current-password">
       </div>
-      <button class="save-btn" onclick="handleLogin()" style="margin-bottom: 10px;">登录</button>
-      <button class="save-btn" onclick="handleRegister()" style="background: var(--bg); border: 2px solid var(--border); color: var(--text);">注册新账号</button>
+      <button class="login-btn" onclick="handleLogin()">登录</button>
+      <div class="login-toggle">
+        还没有账号？<a onclick="showRegister()">立即注册</a>
+      </div>
+    </div>
+    <div class="login-form" id="register-form" style="display: none;">
+      <div class="form-group">
+        <label>用户名</label>
+        <input type="text" id="reg-username" placeholder="3-20位字母或数字" autocomplete="username">
+      </div>
+      <div class="form-group">
+        <label>密码</label>
+        <input type="password" id="reg-password" placeholder="至少6位" autocomplete="new-password">
+      </div>
+      <div class="form-group">
+        <label>确认密码</label>
+        <input type="password" id="reg-password-confirm" placeholder="再次输入密码" autocomplete="new-password">
+      </div>
+      <button class="login-btn" onclick="handleRegister()">注册</button>
+      <div class="login-toggle">
+        已有账号？<a onclick="showLogin()">返回登录</a>
+      </div>
     </div>
   </div>
 </div>
 
-<!-- 数据管理弹窗 -->
-<div id="data-modal" class="modal" onclick="if(event.target===this)closeDataModal()">
-  <div class="modal-content">
-    <div class="modal-header">
-      <span class="modal-title">💾 数据管理</span>
-      <button class="modal-close" onclick="closeDataModal()">×</button>
-    </div>
-    <div class="data-btns" style="margin-top: 15px;">
-      <button class="data-btn" onclick="exportMyData()">📤 导出我的数据</button>
-      <button class="data-btn" onclick="document.getElementById('import-file').click()">📥 导入数据</button>
-    </div>
-    <input type="file" id="import-file" accept=".json" style="display:none" onchange="importMyData(this.files[0])">
-    <div id="data-stats" style="margin-top: 20px; text-align: center; color: var(--text-light); font-size: 13px;"></div>
-    <button class="save-btn" onclick="handleLogout()" style="margin-top: 20px; background: var(--bg); border: 2px solid var(--border); color: var(--text);">退出登录</button>
-  </div>
-</div>
+<!-- ========== 主应用 ========== -->
+<div class="main-app" id="main-app">
 
-<!-- 底部导航 -->
-<div class="bottom-nav">
-  <button class="bottom-nav-btn active" onclick="switchPage('home')">
-    <span class="icon">🏠</span>
-    <span>首页</span>
-  </button>
-  <button class="bottom-nav-btn" onclick="switchPage('calendar')">
-    <span class="icon">📅</span>
-    <span>日历</span>
-  </button>
-  <button class="bottom-nav-btn" onclick="switchPage('people')">
-    <span class="icon">💭</span>
-    <span>人物</span>
-  </button>
-  <button class="bottom-nav-btn" onclick="switchPage('stats')">
-    <span class="icon">📊</span>
-    <span>统计</span>
-  </button>
-  <button class="bottom-nav-btn" onclick="switchPage('add')">
-    <span class="icon">✏️</span>
-    <span>记录</span>
-  </button>
-</div>
+  <!-- 设置栏 -->
+  <div class="settings-bar">
+    <button class="settings-btn" onclick="showDataModal()" id="user-btn">
+      👤 <span id="user-name-display">用户</span>
+    </button>
+    <button class="settings-btn" onclick="toggleTheme()">
+      <span id="theme-icon">☀️</span>
+    </button>
+    <button class="settings-btn" onclick="handleLogout()" title="退出登录">
+      🚪
+    </button>
+  </div>
+
+  <!-- 头部 -->
+  <div class="header">
+    <h1>DreamArchive</h1>
+    <p>梦境档案馆 · 探索潜意识的深处</p>
+  </div>
+
+  <!-- 项目介绍 -->
+  <div class="card" style="margin: 0 20px 20px; background: linear-gradient(135deg, rgba(168,85,247,0.15) 0%, rgba(6,182,212,0.15) 100%); border: 1px solid var(--border);">
+    <div style="text-align: center; padding: 10px 0;">
+      <p style="font-size: 14px; color: var(--text); line-height: 1.8; margin-bottom: 15px;">
+        一个帮助用户<strong>记录、解读和分析梦境</strong>的多用户 Web 应用
+      </p>
+      <div style="display: flex; justify-content: center; gap: 20px; flex-wrap: wrap; margin-bottom: 15px;">
+        <span style="background: var(--bg-card); padding: 6px 14px; border-radius: 20px; font-size: 12px;">🛠 纯前端架构</span>
+        <span style="background: var(--bg-card); padding: 6px 14px; border-radius: 20px; font-size: 12px;">👥 多用户系统</span>
+        <span style="background: var(--bg-card); padding: 6px 14px; border-radius: 20px; font-size: 12px;">📊 数据可视化</span>
+      </div>
+      <div style="display: flex; justify-content: center; gap: 15px; flex-wrap: wrap;">
+        <a href="https://github.com/lo00visa/dream-road" target="_blank" style="display: inline-flex; align-items: center; gap: 6px; background: var(--bg-card); padding: 8px 16px; border-radius: 20px; font-size: 13px; color: var(--text); text-decoration: none;">
+          <svg height="16" width="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/></svg>
+          GitHub
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <!-- 功能卡片 -->
+  <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; padding: 0 20px; margin-bottom: 20px;">
+    <div class="card" style="text-align: center; padding: 20px 15px;">
+      <div style="font-size: 32px; margin-bottom: 10px;">💭</div>
+      <div style="font-size: 14px; font-weight: 600;">人物识别</div>
+      <div style="font-size: 11px; color: var(--text-light); margin-top: 5px;">AI 提取梦中人物</div>
+    </div>
+    <div class="card" style="text-align: center; padding: 20px 15px;">
+      <div style="font-size: 32px; margin-bottom: 10px;">🔮</div>
+      <div style="font-size: 14px; font-weight: 600;">四种解读</div>
+      <div style="font-size: 11px; color: var(--text-light); margin-top: 5px;">弗洛伊德/荣格/德勒兹/周公</div>
+    </div>
+    <div class="card" style="text-align: center; padding: 20px 15px;">
+      <div style="font-size: 32px; margin-bottom: 10px;">📅</div>
+      <div style="font-size: 14px; font-weight: 600;">日历视图</div>
+      <div style="font-size: 11px; color: var(--text-light); margin-top: 5px;">月度趋势可视化</div>
+    </div>
+    <div class="card" style="text-align: center; padding: 20px 15px;">
+      <div style="font-size: 32px; margin-bottom: 10px;">📊</div>
+      <div style="font-size: 14px; font-weight: 600;">数据分析</div>
+      <div style="font-size: 11px; color: var(--text-light); margin-top: 5px;">情绪/人物频次统计</div>
+    </div>
+  </div>
+
+  <!-- 搜索 -->
+  <div class="search-section">
+    <div class="search-bar">
+      <input type="text" id="search-input" placeholder="搜索梦境：妈妈、Lyc、考研..." oninput="performSearch(this.value)">
+      <button class="search-btn" onclick="performSearch(document.getElementById('search-input').value)">🔍</button>
+    </div>
+  </div>
+
+  <!-- 导航 -->
+  <div class="nav">
+    <button class="nav-btn active" onclick="switchPage('home')">🏠 首页</button>
+    <button class="nav-btn" onclick="switchPage('calendar')">📅 日历</button>
+    <button class="nav-btn" onclick="switchPage('people')">💭 人物</button>
+    <button class="nav-btn" onclick="switchPage('stats')">📊 统计</button>
+    <button class="nav-btn" onclick="switchPage('add')">✏️ 记录</button>
+  </div>
+
+  <!-- 首页 -->
+  <div id="page-home" class="page active">
+    <div class="stats-grid" id="home-stats"></div>
+    <div class="filter-bar" id="filter-bar"></div>
+    <div class="dream-list" id="dream-list"></div>
+  </div>
+
+  <!-- 日历页 -->
+  <div id="page-calendar" class="page">
+    <div class="chart-card">
+      <div class="calendar-header">
+        <div class="calendar-month" id="calendar-month-label"></div>
+        <div class="calendar-nav">
+          <button class="calendar-nav-btn" onclick="changeMonth(-1)">◀</button>
+          <button class="calendar-nav-btn" onclick="changeMonth(1)">▶</button>
+        </div>
+      </div>
+      <div class="calendar-grid" id="calendar-grid"></div>
+      <div class="calendar-stats" id="calendar-stats"></div>
+    </div>
+    <div class="chart-card" style="margin-top: 20px;">
+      <div class="stats-section-title">📈 月度趋势</div>
+      <div class="chart-container"><canvas id="monthly-chart"></canvas></div>
+    </div>
+  </div>
+
+  <!-- 人物页 -->
+  <div id="page-people" class="page">
+    <div id="people-content"></div>
+  </div>
+
+  <!-- 统计页 -->
+  <div id="page-stats" class="page">
+    <div class="stats-section">
+      <div class="stats-section-title">👥 人物出现频次</div>
+      <div class="top-list" id="people-ranking"></div>
+    </div>
+    <div class="chart-card">
+      <div class="stats-section-title">😊 情绪分布</div>
+      <div class="chart-container"><canvas id="emotion-chart"></canvas></div>
+    </div>
+    <div class="chart-card">
+      <div class="stats-section-title">🌙 月度记录趋势</div>
+      <div class="chart-container"><canvas id="monthly-trend-chart"></canvas></div>
+    </div>
+    <div class="chart-card">
+      <div class="stats-section-title">🔮 梦境类型分布</div>
+      <div class="chart-container"><canvas id="type-chart"></canvas></div>
+    </div>
+  </div>
+
+  <!-- 记录页 -->
+  <div id="page-add" class="page">
+    <div class="form-card">
+      <div class="form-group">
+        <label>日期</label>
+        <input type="date" id="add-date">
+      </div>
+      <div class="form-group">
+        <label>标题</label>
+        <input type="text" id="add-title" placeholder="给梦取个名字...">
+      </div>
+      <div class="form-group">
+        <label>梦境内容</label>
+        <textarea id="add-content" placeholder="详细描述你梦到了什么..."></textarea>
+      </div>
+      <div class="form-group">
+        <label>情绪</label>
+        <select id="add-emotion">
+          <option value="😌">😌 平静</option>
+          <option value="😊">😊 开心</option>
+          <option value="😰">😰 焦虑</option>
+          <option value="🤔">🤔 困惑</option>
+          <option value="🤩">🤩 兴奋</option>
+          <option value="😢">😢 难过</option>
+          <option value="😐">😐 中性</option>
+        </select>
+      </div>
+      <button class="save-btn" onclick="saveNewDream()">保存梦境</button>
+    </div>
+  </div>
+
+  <!-- 梦境详情弹窗 -->
+  <div id="modal" class="modal" onclick="if(event.target===this)closeModal()">
+    <div class="modal-content">
+      <div class="modal-header">
+        <div>
+          <div class="modal-title" id="modal-title"></div>
+          <div class="modal-date" id="modal-date"></div>
+        </div>
+        <button class="modal-close" onclick="closeModal()">×</button>
+      </div>
+      <div id="modal-emotion"></div>
+      <div id="modal-people"></div>
+      <div class="analysis-selector" id="analysis-selector"></div>
+      <div class="analysis-content" id="modal-analysis"></div>
+    </div>
+  </div>
+
+  <!-- 数据管理弹窗 -->
+  <div id="data-modal" class="modal" onclick="if(event.target===this)closeDataModal()">
+    <div class="modal-content">
+      <div class="modal-header">
+        <span class="modal-title">💾 数据管理</span>
+        <button class="modal-close" onclick="closeDataModal()">×</button>
+      </div>
+      <p style="text-align: center; margin-bottom: 20px; font-size: 14px; color: var(--text-light);">
+        当前用户：<strong style="color: var(--purple);" id="data-user-name"></strong>
+      </p>
+      <div class="data-btns" style="margin-top: 15px;">
+        <button class="save-btn" onclick="exportMyData()" style="margin-bottom: 10px;">📤 导出我的数据</button>
+        <button class="save-btn" onclick="document.getElementById('import-file').click()" style="background: var(--bg); border: 2px solid var(--border); color: var(--text);">📥 导入数据</button>
+      </div>
+      <input type="file" id="import-file" accept=".json" style="display:none" onchange="importMyData(this.files[0])">
+      <button class="save-btn" onclick="handleLogout()" style="margin-top: 20px; background: rgba(239,68,68,0.15); border: 2px solid rgba(239,68,68,0.3); color: #EF4444;">🚪 退出登录</button>
+    </div>
+  </div>
+
+  <!-- 底部导航 -->
+  <div class="bottom-nav">
+    <button class="bottom-nav-btn active" onclick="switchPage('home')">
+      <span class="icon">🏠</span>
+      <span>首页</span>
+    </button>
+    <button class="bottom-nav-btn" onclick="switchPage('calendar')">
+      <span class="icon">📅</span>
+      <span>日历</span>
+    </button>
+    <button class="bottom-nav-btn" onclick="switchPage('people')">
+      <span class="icon">💭</span>
+      <span>人物</span>
+    </button>
+    <button class="bottom-nav-btn" onclick="switchPage('stats')">
+      <span class="icon">📊</span>
+      <span>统计</span>
+    </button>
+    <button class="bottom-nav-btn" onclick="switchPage('add')">
+      <span class="icon">✏️</span>
+      <span>记录</span>
+    </button>
+  </div>
+
+</div><!-- end main-app -->
 
 <script src="dreams_data.js"></script>
 <script>
@@ -599,110 +724,17 @@ function saveUserDreams(userId, data) {
   localStorage.setItem(`dreamarchive_${userId}_dreams`, JSON.stringify(data));
 }
 
-function initUser() {
-  // 检查是否有保存的登录状态
-  const lastUser = localStorage.getItem('dreamarchive_last_user');
-  
-  // 如果是lovisa且数据不存在，自动初始化
-  if (lastUser?.toLowerCase() === 'lovisa') {
-    const users = getUsersDB();
-    if (!users['lovisa']) {
-      // 创建lovisa账号
-      users['lovisa'] = {
-        password: '20030521',
-        createdAt: '2026-04-24T00:00:00.000Z',
-        settings: {}
-      };
-      saveUsersDB(users);
-      
-      // 绑定梦境数据
-      if (typeof DREAM_ARCHIVE_DATA !== 'undefined') {
-        saveUserDreams('lovisa', DREAM_ARCHIVE_DATA);
-      }
-    }
-  }
-  
-  if (lastUser) {
-    const users = getUsersDB();
-    if (users[lastUser]) {
-      currentUser = lastUser;
-      updateUserDisplay();
-      loadUserDreams();
-    }
-  }
+// 登录/注册表单切换
+function showRegister() {
+  document.getElementById('login-form').style.display = 'none';
+  document.getElementById('register-form').style.display = 'block';
+  document.getElementById('login-error').classList.remove('show');
 }
 
-function loadUserDreams() {
-  if (!currentUser) {
-    dreams = typeof DREAM_ARCHIVE_DATA !== 'undefined' ? [...DREAM_ARCHIVE_DATA] : getDefaultDreams();
-    return;
-  }
-  
-  const stored = getUserDreams(currentUser);
-  if (stored) {
-    dreams = stored;
-  } else {
-    // 新用户，使用示例数据
-    dreams = getDefaultDreams();
-  }
-  saveDreams();
-}
-
-function showUserModal() {
-  if (currentUser) {
-    // 已登录，显示数据管理
-    showDataModal();
-  } else {
-    document.getElementById('user-modal-title').textContent = '登录 / 注册';
-    document.getElementById('user-modal-content').innerHTML = `
-      <div class="form-group">
-        <label>用户名</label>
-        <input type="text" id="login-username" placeholder="输入用户名">
-      </div>
-      <div class="form-group">
-        <label>密码</label>
-        <input type="password" id="login-password" placeholder="输入密码">
-      </div>
-      <button class="save-btn" onclick="handleLogin()" style="margin-bottom: 10px;">登录</button>
-      <button class="save-btn" onclick="showRegisterForm()" style="background: var(--bg); border: 2px solid var(--border); color: var(--text);">注册新账号</button>
-    `;
-    document.getElementById('user-modal').classList.add('show');
-  }
-}
-
-function showRegisterForm() {
-  document.getElementById('user-modal-content').innerHTML = `
-    <p style="color: var(--text-light); font-size: 13px; margin-bottom: 15px;">创建一个新账号，开始记录你的梦境</p>
-    <div class="form-group">
-      <label>选择用户名</label>
-      <input type="text" id="reg-username" placeholder="3-20位字母或数字">
-    </div>
-    <div class="form-group">
-      <label>设置密码</label>
-      <input type="password" id="reg-password" placeholder="至少6位">
-    </div>
-    <div class="form-group">
-      <label>确认密码</label>
-      <input type="password" id="reg-password-confirm" placeholder="再次输入密码">
-    </div>
-    <button class="save-btn" onclick="handleRegister()" style="margin-bottom: 10px;">创建账号</button>
-    <button class="save-btn" onclick="showLoginForm()" style="background: var(--bg); border: 2px solid var(--border); color: var(--text);">返回登录</button>
-  `;
-}
-
-function showLoginForm() {
-  document.getElementById('user-modal-content').innerHTML = `
-    <div class="form-group">
-      <label>用户名</label>
-      <input type="text" id="login-username" placeholder="输入用户名">
-    </div>
-    <div class="form-group">
-      <label>密码</label>
-      <input type="password" id="login-password" placeholder="输入密码">
-    </div>
-    <button class="save-btn" onclick="handleLogin()" style="margin-bottom: 10px;">登录</button>
-    <button class="save-btn" onclick="showRegisterForm()" style="background: var(--bg); border: 2px solid var(--border); color: var(--text);">注册新账号</button>
-  `;
+function showLogin() {
+  document.getElementById('login-form').style.display = 'block';
+  document.getElementById('register-form').style.display = 'none';
+  document.getElementById('login-error').classList.remove('show');
 }
 
 function handleLogin() {
@@ -710,7 +742,8 @@ function handleLogin() {
   const password = document.getElementById('login-password')?.value;
   
   if (!username || !password) {
-    alert('请输入用户名和密码');
+    document.getElementById('login-error').textContent = '请输入用户名和密码';
+    document.getElementById('login-error').classList.add('show');
     return;
   }
   
@@ -734,34 +767,28 @@ function handleLogin() {
     
     // 验证密码
     if (users['lovisa'].password !== password) {
-      alert('密码错误');
+      document.getElementById('login-error').textContent = '用户名或密码错误';
+      document.getElementById('login-error').classList.add('show');
       return;
     }
     
     currentUser = 'lovisa';
     localStorage.setItem('dreamarchive_last_user', 'lovisa');
-    updateUserDisplay();
-    loadUserDreams();
-    closeUserModal();
-    renderHome();
-    alert('欢迎回来，lovisa！');
+    showMainApp();
     return;
   }
   
   // 普通账号登录
   const users = getUsersDB();
   if (!users[username] || users[username].password !== password) {
-    alert('用户名或密码错误');
+    document.getElementById('login-error').textContent = '用户名或密码错误';
+    document.getElementById('login-error').classList.add('show');
     return;
   }
   
   currentUser = username;
   localStorage.setItem('dreamarchive_last_user', username);
-  updateUserDisplay();
-  loadUserDreams();
-  closeUserModal();
-  renderHome();
-  alert(`欢迎回来，${username}！`);
+  showMainApp();
 }
 
 function handleRegister() {
@@ -770,33 +797,39 @@ function handleRegister() {
   const passwordConfirm = document.getElementById('reg-password-confirm')?.value;
   
   if (!username || !password) {
-    alert('请填写所有字段');
+    document.getElementById('login-error').textContent = '请填写所有字段';
+    document.getElementById('login-error').classList.add('show');
     return;
   }
   
   if (username.length < 3 || username.length > 20) {
-    alert('用户名需要3-20位');
+    document.getElementById('login-error').textContent = '用户名需要3-20位';
+    document.getElementById('login-error').classList.add('show');
     return;
   }
   
   if (!/^[a-zA-Z0-9]+$/.test(username)) {
-    alert('用户名只能包含字母和数字');
+    document.getElementById('login-error').textContent = '用户名只能包含字母和数字';
+    document.getElementById('login-error').classList.add('show');
     return;
   }
   
   if (password.length < 6) {
-    alert('密码至少6位');
+    document.getElementById('login-error').textContent = '密码至少6位';
+    document.getElementById('login-error').classList.add('show');
     return;
   }
   
   if (password !== passwordConfirm) {
-    alert('两次密码不一致');
+    document.getElementById('login-error').textContent = '两次密码不一致';
+    document.getElementById('login-error').classList.add('show');
     return;
   }
   
   const users = getUsersDB();
   if (users[username]) {
-    alert('用户名已存在');
+    document.getElementById('login-error').textContent = '用户名已存在';
+    document.getElementById('login-error').classList.add('show');
     return;
   }
   
@@ -808,61 +841,54 @@ function handleRegister() {
   };
   saveUsersDB(users);
   
-  // 如果是lovisa，初始化默认数据
-  if (username.toLowerCase() === 'lovisa') {
-    if (typeof DREAM_ARCHIVE_DATA !== 'undefined') {
-      saveUserDreams(username, DREAM_ARCHIVE_DATA);
-    }
-  }
-  
+  // 自动登录
   currentUser = username;
   localStorage.setItem('dreamarchive_last_user', username);
-  updateUserDisplay();
-  loadUserDreams();
-  closeUserModal();
-  renderHome();
-  alert(`账号创建成功，欢迎 ${username}！你的梦境档案已准备好。`);
+  showMainApp();
 }
 
 function handleLogout() {
   if (!confirm('确定要退出登录吗？')) return;
   currentUser = null;
   localStorage.removeItem('dreamarchive_last_user');
-  updateUserDisplay();
+  
+  // 隐藏主应用，显示登录页
+  document.getElementById('main-app').classList.remove('show');
+  document.getElementById('login-page').classList.remove('hidden');
+  
+  // 清空输入
+  document.getElementById('login-username').value = '';
+  document.getElementById('login-password').value = '';
+  document.getElementById('login-error').classList.remove('show');
+  showLogin();
+}
+
+function showMainApp() {
+  // 隐藏登录页，显示主应用
+  document.getElementById('login-page').classList.add('hidden');
+  document.getElementById('main-app').classList.add('show');
+  
+  // 更新用户显示
+  document.getElementById('user-name-display').textContent = currentUser;
+  document.getElementById('data-user-name').textContent = currentUser;
+  
+  // 加载数据
   loadUserDreams();
-  closeDataModal();
+  
+  // 初始化页面
+  document.getElementById('add-date').value = new Date().toISOString().split('T')[0];
   renderHome();
+  updateBottomNav();
 }
 
-function updateUserDisplay() {
-  const display = document.getElementById('user-name-display');
-  const dataBtn = document.getElementById('data-btn');
-  if (display) {
-    display.textContent = currentUser || '登录';
-  }
-  if (dataBtn) {
-    dataBtn.style.display = currentUser ? 'flex' : 'none';
-  }
-}
-
-function closeUserModal() {
-  document.getElementById('user-modal')?.classList.remove('show');
-}
-
+// 数据管理
 function showDataModal() {
   document.getElementById('data-modal').classList.add('show');
   const stats = document.getElementById('data-stats');
-  if (stats) {
-    stats.innerHTML = `
-      <p>当前用户: <strong>${currentUser}</strong></p>
-      <p>梦境数量: <strong>${dreams.length}</strong></p>
-      <p>数据存储于本地浏览器</p>
-    `;
-  }
 }
 
 function closeDataModal() {
-  document.getElementById('data-modal')?.classList.remove('show');
+  document.getElementById('data-modal').classList.remove('show');
 }
 
 function exportMyData() {
@@ -919,24 +945,42 @@ function importMyData(file) {
 
 // ========== 初始化 ==========
 document.addEventListener('DOMContentLoaded', () => {
-  initUser();
-  loadDreams();
-  renderHome();
-  updateBottomNav();
-  document.getElementById('add-date').value = new Date().toISOString().split('T')[0];
+  // 检查是否有保存的登录状态
+  const lastUser = localStorage.getItem('dreamarchive_last_user');
+  
+  if (lastUser) {
+    const users = getUsersDB();
+    if (users[lastUser]) {
+      currentUser = lastUser;
+      showMainApp();
+    } else {
+      // 用户不存在，显示登录页
+      document.getElementById('login-page').classList.remove('hidden');
+    }
+  } else {
+    // 没有登录状态，显示登录页
+    document.getElementById('login-page').classList.remove('hidden');
+  }
+  
+  // 回车登录
+  document.getElementById('login-password')?.addEventListener('keypress', (e) => {
+    if (e.key === 'Enter') handleLogin();
+  });
 });
 
-function loadDreams() {
-  const stored = localStorage.getItem('dreamarchive_dreams');
+function loadUserDreams() {
+  if (!currentUser) {
+    dreams = [];
+    return;
+  }
+  
+  const stored = getUserDreams(currentUser);
   if (stored) {
-    dreams = JSON.parse(stored);
-  } else if (typeof DREAM_ARCHIVE_DATA !== 'undefined') {
-    // 使用外部数据文件
-    dreams = DREAM_ARCHIVE_DATA;
-    saveDreams();
+    dreams = stored;
   } else {
-    // 使用默认数据
+    // 新用户，使用默认示例
     dreams = getDefaultDreams();
+    saveUserDreams(currentUser, dreams);
     saveDreams();
   }
 }
@@ -944,8 +988,6 @@ function loadDreams() {
 function saveDreams() {
   if (currentUser) {
     saveUserDreams(currentUser, dreams);
-  } else {
-    localStorage.setItem('dreamarchive_dreams', JSON.stringify(dreams));
   }
 }
 
@@ -958,22 +1000,6 @@ function getDefaultDreams() {
       content: '这是你的梦境档案馆。每一个梦都是通往潜意识的大门，记录它们，探索真实的自己。',
       emotion: '😊',
       extractedPeople: []
-    },
-    {
-      id: 'd_sample_2',
-      date: '2026-03-04',
-      title: '梦到阿公给我打电话',
-      content: '梦到阿公给我打电话，还有爸爸。然后这个看电影的哥查岗说不相信我为什么不回他消息。',
-      emotion: '😌',
-      extractedPeople: ['阿公', '爸爸']
-    },
-    {
-      id: 'd_sample_3',
-      date: '2025-11-14',
-      title: '甘子玉与橄榄球场',
-      content: '很奇怪梦到甘子玉和那个高尔夫哥是好朋友，然后gzy带我出去玩，我们去玩橄榄球。',
-      emotion: '🤔',
-      extractedPeople: ['甘子玉', '高尔夫哥']
     }
   ];
 }
@@ -1013,7 +1039,6 @@ function toggleTheme() {
 
 // ========== 首页渲染 ==========
 function renderHome() {
-  // 统计数据
   const total = dreams.length;
   const emotionCounts = {};
   dreams.forEach(d => {
@@ -1044,7 +1069,6 @@ function renderHome() {
     </div>
   `;
   
-  // 筛选标签
   const themes = ['全部', '情感', '家庭', '焦虑', '神秘', '日常'];
   document.getElementById('filter-bar').innerHTML = themes.map(t => `
     <button class="filter-btn ${currentFilter === t.toLowerCase() ? 'active' : ''}" onclick="setFilter('${t.toLowerCase()}')">
@@ -1052,7 +1076,6 @@ function renderHome() {
     </button>
   `).join('');
   
-  // 渲染列表
   applyFilter();
 }
 
@@ -1148,7 +1171,6 @@ function renderPeople() {
   const { byRelation, counts } = countPeople();
   
   let html = '';
-  
   const relationOrder = ['家人', '挚友', '朋友', '暧昧对象', '情感纠葛', '前任', '理想型', '其他'];
   
   relationOrder.forEach(relation => {
@@ -1232,23 +1254,15 @@ function renderCalendar() {
   const lastDay = new Date(year, month + 1, 0);
   const startWeekday = firstDay.getDay();
   
-  // 统计数据
   const monthDreams = dreams.filter(d => {
     const dDate = new Date(d.date);
     return dDate.getFullYear() === year && dDate.getMonth() === month;
   });
   
-  const emotionCounts = {};
-  monthDreams.forEach(d => {
-    emotionCounts[d.emotion] = (emotionCounts[d.emotion] || 0) + 1;
-  });
-  
-  // 星期标题
   let html = ['日', '一', '二', '三', '四', '五', '六'].map(d => 
     `<div class="calendar-weekday">${d}</div>`
   ).join('');
   
-  // 日期
   const today = new Date();
   for (let i = 0; i < startWeekday; i++) {
     html += '<div class="calendar-day" style="opacity: 0;"></div>';
@@ -1271,7 +1285,6 @@ function renderCalendar() {
   
   document.getElementById('calendar-grid').innerHTML = html;
   
-  // 统计卡片
   document.getElementById('calendar-stats').innerHTML = `
     <div class="calendar-stat-card">
       <div class="stat-label">本月记录</div>
@@ -1285,7 +1298,6 @@ function renderCalendar() {
     </div>
   `;
   
-  // 渲染月度趋势图
   renderMonthlyChart();
 }
 
@@ -1305,10 +1317,10 @@ function showDayDreams(dateStr) {
 }
 
 function renderMonthlyChart() {
-  const ctx = document.getElementById('monthly-chart').getContext('2d');
+  const ctx = document.getElementById('monthly-chart')?.getContext('2d');
+  if (!ctx) return;
   if (monthlyChart) monthlyChart.destroy();
   
-  // 获取近6个月数据
   const labels = [];
   const data = [];
   for (let i = 5; i >= 0; i--) {
@@ -1377,7 +1389,8 @@ function renderPeopleRanking() {
 }
 
 function renderEmotionChart() {
-  const ctx = document.getElementById('emotion-chart').getContext('2d');
+  const ctx = document.getElementById('emotion-chart')?.getContext('2d');
+  if (!ctx) return;
   if (emotionChart) emotionChart.destroy();
   
   const counts = {};
@@ -1410,7 +1423,8 @@ function renderEmotionChart() {
 }
 
 function renderMonthlyTrendChart() {
-  const ctx = document.getElementById('monthly-trend-chart').getContext('2d');
+  const ctx = document.getElementById('monthly-trend-chart')?.getContext('2d');
+  if (!ctx) return;
   if (monthlyTrendChart) monthlyTrendChart.destroy();
   
   const labels = [];
@@ -1454,10 +1468,10 @@ function renderMonthlyTrendChart() {
 }
 
 function renderTypeChart() {
-  const ctx = document.getElementById('type-chart').getContext('2d');
+  const ctx = document.getElementById('type-chart')?.getContext('2d');
+  if (!ctx) return;
   if (typeChart) typeChart.destroy();
   
-  // 基于内容推断梦境类型
   const types = { '情感': 0, '家庭': 0, '焦虑': 0, '冒险': 0, '神秘': 0, '日常': 0 };
   dreams.forEach(d => {
     const content = (d.title + ' ' + d.content).toLowerCase();
@@ -1498,14 +1512,12 @@ function showDreamDetail(id) {
   document.getElementById('modal-date').textContent = `${formatDate(dream.date)} ${getWeekday(dream.date)}`;
   document.getElementById('modal-emotion').innerHTML = `<span style="display: inline-block; background: var(--bg); padding: 8px 16px; border-radius: 12px; margin-bottom: 15px;">${dream.emotion}</span>`;
   
-  // 人物标签
   const people = extractPeople(dream.content + ' ' + dream.title);
   document.getElementById('modal-people').innerHTML = people.length > 0 ? 
     `<div style="margin-bottom: 15px; display: flex; flex-wrap: wrap; gap: 8px;">
       ${people.map(p => `<span class="dream-tag">${PERSON_DB[p]?.emoji || '👤'} ${p}</span>`).join('')}
     </div>` : '';
   
-  // 解读风格选择
   document.getElementById('analysis-selector').innerHTML = Object.values(ANALYSIS_STYLES).map(style => `
     <button class="analysis-style-btn ${currentAnalysisStyle === style.id ? 'active' : ''}" onclick="changeAnalysisStyle('${style.id}')">
       <div class="style-icon">${style.icon}</div>
@@ -1514,13 +1526,12 @@ function showDreamDetail(id) {
     </button>
   `).join('');
   
-  // 内容
   document.getElementById('modal-analysis').innerHTML = `
     <h3>📝 梦境内容</h3>
     <p>${dream.content}</p>
     <hr style="border: none; border-top: 1px solid var(--border); margin: 20px 0;">
     <h3>${ANALYSIS_STYLES[currentAnalysisStyle].icon} ${ANALYSIS_STYLES[currentAnalysisStyle].name}式解读</h3>
-    <div id="analysis-result">${dream.analysis?.[currentAnalysisStyle] || generateAnalysis(dream.content, currentAnalysisStyle)}</div>
+    <div id="analysis-result">${generateAnalysis(dream.content, currentAnalysisStyle)}</div>
   `;
   
   document.getElementById('modal').classList.add('show');
@@ -1528,14 +1539,13 @@ function showDreamDetail(id) {
 
 function changeAnalysisStyle(styleId) {
   currentAnalysisStyle = styleId;
-  const dreamId = document.getElementById('modal-title')?.textContent;
-  if (dreamId) {
-    const dream = dreams.find(d => d.title === document.getElementById('modal-title').textContent);
-    if (dream) {
-      document.querySelectorAll('.analysis-style-btn').forEach(btn => btn.classList.remove('active'));
-      document.querySelector(`.analysis-style-btn[onclick="changeAnalysisStyle('${styleId}')"]`)?.classList.add('active');
-      document.getElementById('analysis-result').innerHTML = generateAnalysis(dream.content, styleId);
-    }
+  document.querySelectorAll('.analysis-style-btn').forEach(btn => btn.classList.remove('active'));
+  document.querySelector(`.analysis-style-btn[onclick="changeAnalysisStyle('${styleId}')"]`)?.classList.add('active');
+  
+  const title = document.getElementById('modal-title')?.textContent;
+  const dream = dreams.find(d => d.title === title);
+  if (dream) {
+    document.getElementById('analysis-result').innerHTML = generateAnalysis(dream.content, styleId);
   }
 }
 
@@ -1641,7 +1651,6 @@ function saveNewDream() {
   dreams.unshift(newDream);
   saveDreams();
   
-  // 清空表单
   document.getElementById('add-title').value = '';
   document.getElementById('add-content').value = '';
   
