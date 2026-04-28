@@ -1311,8 +1311,7 @@ function showDayDreams(dateStr) {
   if (dayDreams.length > 0) {
     filteredDreams = dayDreams;
     switchPage('home');
-    document.getElementById('search-input').value = dateStr;
-    performSearch(dateStr);
+    performSearch('');
   }
 }
 
